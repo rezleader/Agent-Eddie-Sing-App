@@ -83,13 +83,19 @@ function UserRoutes() {
     setCurrentChallenges([]);
   };
 
-  const handleRecognize = async (audioFile: File) => {
+  const handleRecognize = async (audioBlob: Blob) => {
     try {
-      const result = await recognizeSong.mutateAsync(audioFile);
+      const result = await recognizeSong.mutateAsync(audioBlob);
       handleSongDetected(result.song, result.challenges);
+      
+      const segmentText = result.segment === 1 ? "first minute" : 
+                         result.segment === 2 ? "second minute" : 
+                         result.segment === 3 ? "third minute" : 
+                         "minute 4+";
+      
       toast({
         title: "Song recognized!",
-        description: `Found: ${result.song.title} by ${result.song.artist}`,
+        description: `Found: ${result.song.title} - ${segmentText}`,
       });
     } catch (error) {
       toast({
