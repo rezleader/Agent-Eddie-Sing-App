@@ -11,7 +11,7 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
-        // Flat / base colors (regular buttons)
+        // Flat / base colors
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
@@ -81,11 +81,20 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // ARG-specific category colors
+        category: {
+          love: "hsl(340 82% 52% / <alpha-value>)", // Pink/Rose
+          racism: "hsl(0 84% 60% / <alpha-value>)", // Red
+          sexism: "hsl(262 83% 58% / <alpha-value>)", // Purple
+          homo: "hsl(173 80% 40% / <alpha-value>)", // Teal
+          ai: "hsl(45 93% 47% / <alpha-value>)", // Yellow/Gold
+        },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
+        sans: ["Inter", "var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        display: ["Work Sans", "Inter", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {
@@ -96,10 +105,25 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pulse-scale": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.05)", opacity: "0.8" },
+        },
+        "slide-up": {
+          from: { transform: "translateY(10px)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
+        "pop-in": {
+          "0%": { transform: "scale(0.8)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-scale": "pulse-scale 2s ease-in-out infinite",
+        "slide-up": "slide-up 0.3s ease-out",
+        "pop-in": "pop-in 0.2s ease-out",
       },
     },
   },
