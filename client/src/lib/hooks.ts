@@ -133,8 +133,10 @@ export function useCompleteChallenge() {
 // Song recognition hook
 export function useRecognizeSong() {
   return useMutation({
-    mutationFn: async (audioFile: File) => {
+    mutationFn: async (audioBlob: Blob) => {
       const formData = new FormData();
+      // Convert blob to file with proper extension
+      const audioFile = new File([audioBlob], 'recording.webm', { type: audioBlob.type });
       formData.append("audioFile", audioFile);
 
       const response = await fetch("/api/recognize", {
@@ -149,6 +151,7 @@ export function useRecognizeSong() {
       return response.json() as Promise<{
         song: Song;
         challenges: Challenge[];
+        segment: number;
         confidence: number;
       }>;
     },

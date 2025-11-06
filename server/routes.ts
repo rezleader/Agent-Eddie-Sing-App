@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -42,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Origin', '*');
     next();
   });
-  app.use('/uploads', require('express').static(uploadDir));
+  app.use('/uploads', express.static(uploadDir));
 
   // Songs endpoints
   app.get("/api/songs", async (_req, res) => {
@@ -213,26 +214,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Song recognition endpoint (simplified - will be enhanced in integration phase)
+  // Song recognition endpoint with segment detection
   app.post("/api/recognize", upload.single('audioFile'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "Audio file is required" });
       }
 
+      // TODO: Implement real audio fingerprinting to identify the song
       // For now, return the first song as a mock match
-      // In integration phase, we'll implement actual audio fingerprinting
       const songs = await storage.getSongs();
       if (songs.length === 0) {
         return res.status(404).json({ error: "No songs in database" });
       }
 
       const matchedSong = songs[0]; // Mock: return first song
-      const challenges = await storage.getChallengesBySong(matchedSong.id);
+      
+      // TODO: Implement real audio analysis to detect which segment (minute) of the song
+      // This would involve:
+      // 1. Analyzing the audio characteristics (tempo, pitch, spectral features)
+      // 2. Comparing against stored fingerprints for each segment of the song
+      // 3. Determining which minute segment (1-4) best matches
+      
+      // For now, mock segment detection (randomly select 1-4)
+      // In production, this would be based on actual audio analysis
+      const detectedSegment = Math.floor(Math.random() * 4) + 1; // Random 1-4
+      
+      // Get challenges only for the detected segment
+      const segmentChallenges = await storage.getChallengesBySegment(matchedSong.id, detectedSegment);
+      
+      console.log(`Recognized: ${matchedSong.title}, Segment: ${detectedSegment}, Challenges: ${segmentChallenges.length}`);
 
       res.json({
         song: matchedSong,
-        challenges: challenges,
+        challenges: segmentChallenges,
+        segment: detectedSegment,
         confidence: 0.95, // Mock confidence score
       });
     } catch (error) {

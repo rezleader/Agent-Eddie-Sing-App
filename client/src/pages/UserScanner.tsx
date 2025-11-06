@@ -1,33 +1,73 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Mic, Music, Loader2 } from "lucide-react";
+import { Mic, Music, Loader2, StopCircle } from "lucide-react";
 import { PointsDisplay } from "@/components/PointsDisplay";
 
 interface UserScannerProps {
-  onSongDetected: (audioFile: File) => void;
+  onSongDetected: (audioBlob: Blob) => void;
   totalPoints: number;
   isRecognizing?: boolean;
 }
 
 export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false }: UserScannerProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        onSongDetected(audioBlob);
+        
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        setRecordingTime(0);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      // Update timer every second
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+      // Auto-stop after 10 seconds (enough to capture a segment)
+      setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          stopRecording();
+        }
+      }, 10000);
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Could not access microphone. Please ensure you have granted microphone permissions.');
     }
   };
 
-  const handleScan = async () => {
-    if (!selectedFile) return;
-    onSongDetected(selectedFile);
-  };
-
-  const handleMicrophoneCapture = () => {
-    // TODO: Implement microphone capture with Web Audio API
-    alert("Microphone capture feature coming soon! Please upload an audio file for now.");
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   return (
@@ -50,106 +90,81 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
         <Card className="shadow-xl border-2" data-testid="card-scanner">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl lg:text-3xl font-display">
-              Recognize Your Song
+              Listen & Recognize
             </CardTitle>
             <CardDescription className="text-base">
-              Upload an audio file or record from your microphone to identify songs and unlock challenges
+              Play an Agent Eddie Sing song and hold your device near the speakers to identify it and unlock challenges
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Upload option */}
-            <div className="space-y-3">
-              <label 
-                htmlFor="audio-upload" 
-                className={`flex flex-col items-center justify-center w-full min-h-48 rounded-xl border-2 border-dashed transition-all ${
-                  isRecognizing 
-                    ? "border-primary bg-primary/10 cursor-wait"
-                    : "border-primary/30 bg-primary/5 cursor-pointer hover-elevate active-elevate-2"
-                }`}
-                data-testid="label-file-upload"
-              >
-                <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-                  {isRecognizing ? (
-                    <>
-                      <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                      <div className="space-y-1">
-                        <p className="text-lg font-semibold">Analyzing audio...</p>
-                        <p className="text-sm text-muted-foreground">Please wait</p>
-                      </div>
-                    </>
-                  ) : selectedFile ? (
-                    <>
-                      <Music className="w-12 h-12 text-primary" />
-                      <div className="space-y-1">
-                        <p className="text-lg font-semibold">{selectedFile.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Click to choose a different file
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-12 h-12 text-primary" />
-                      <div className="space-y-1">
-                        <p className="text-lg font-semibold">
-                          Upload Audio File
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          MP3, WAV, M4A up to 10MB
-                        </p>
-                      </div>
-                    </>
-                  )}
+            {/* Microphone capture */}
+            <div className="space-y-4">
+              {isRecognizing || isRecording ? (
+                <div className="flex flex-col items-center justify-center w-full min-h-64 rounded-xl border-2 border-primary bg-primary/10">
+                  <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">
+                    {isRecording ? (
+                      <>
+                        <div className="relative">
+                          <Mic className="w-16 h-16 text-primary animate-pulse-scale" />
+                          <div className="absolute -inset-4 rounded-full border-4 border-primary/30 animate-ping"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-2xl font-bold">Recording...</p>
+                          <p className="text-lg text-muted-foreground">
+                            {recordingTime}s / 10s
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Play the song nearby
+                          </p>
+                        </div>
+                        <Button
+                          onClick={stopRecording}
+                          variant="destructive"
+                          size="lg"
+                          className="mt-4"
+                          data-testid="button-stop-recording"
+                        >
+                          <StopCircle className="w-5 h-5 mr-2" />
+                          Stop Recording
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                        <div className="space-y-1">
+                          <p className="text-2xl font-bold">Analyzing audio...</p>
+                          <p className="text-sm text-muted-foreground">
+                            Identifying song and segment
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <input
-                  id="audio-upload"
-                  type="file"
-                  className="hidden"
-                  accept="audio/*"
-                  onChange={handleFileSelect}
+              ) : (
+                <button
+                  onClick={startRecording}
                   disabled={isRecognizing}
-                  data-testid="input-audio-file"
-                />
-              </label>
-
-              {selectedFile && !isRecognizing && (
-                <Button 
-                  onClick={handleScan}
-                  className="w-full"
-                  size="lg"
-                  data-testid="button-scan-audio"
+                  className="flex flex-col items-center justify-center w-full min-h-64 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 cursor-pointer transition-all hover-elevate active-elevate-2"
+                  data-testid="button-record-audio"
                 >
-                  <Music className="w-5 h-5 mr-2" />
-                  Scan Audio
-                </Button>
+                  <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">
+                    <div className="relative">
+                      <Mic className="w-16 h-16 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-2xl font-bold">
+                        Tap to Listen
+                      </p>
+                      <p className="text-base text-muted-foreground">
+                        Play an Agent Eddie Sing song and tap here to identify it
+                      </p>
+                    </div>
+                  </div>
+                </button>
               )}
             </div>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-card px-4 text-muted-foreground font-semibold">
-                  OR
-                </span>
-              </div>
-            </div>
-
-            {/* Microphone option */}
-            <Button
-              onClick={handleMicrophoneCapture}
-              variant="outline"
-              size="lg"
-              className="w-full min-h-20 text-lg"
-              disabled={isRecognizing}
-              data-testid="button-record-audio"
-            >
-              <Mic className={`w-6 h-6 mr-3 ${isRecognizing ? 'animate-pulse-scale' : ''}`} />
-              {isRecognizing ? "Listening..." : "Record from Microphone"}
-            </Button>
           </CardContent>
         </Card>
 
@@ -159,9 +174,11 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
             <div className="space-y-3">
               <h3 className="font-bold text-lg">How It Works:</h3>
               <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>Upload an audio file or record from your microphone</li>
-                <li>Our system will identify the Agent Eddie Sing song</li>
-                <li>View time-based challenges divided into 4 minute segments</li>
+                <li>Play an Agent Eddie Sing song on any device</li>
+                <li>Tap the microphone button above</li>
+                <li>Hold your device near the speakers for 5-10 seconds</li>
+                <li>Our system identifies the song AND which minute segment you're in</li>
+                <li>View challenges specific to that time segment</li>
                 <li>Complete challenges to earn points and share on social media</li>
                 <li>Take action on social justice issues through music!</li>
               </ol>
