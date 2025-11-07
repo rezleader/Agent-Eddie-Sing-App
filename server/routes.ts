@@ -286,6 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(sanitizedLeaderboard);
     } catch (error) {
+      console.error("Leaderboard error:", error);
       res.status(500).json({ error: "Failed to fetch leaderboard" });
     }
   });

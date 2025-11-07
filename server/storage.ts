@@ -1,6 +1,6 @@
 import { type Song, type InsertSong, type Challenge, type InsertChallenge, type UserSession, type InsertUserSession, songs, challenges, userSessions } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 
 export interface IStorage {
@@ -34,8 +34,8 @@ export class PostgresStorage implements IStorage {
     if (!databaseUrl) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const sql = neon(databaseUrl);
-    this.db = drizzle(sql);
+    const client = neon(databaseUrl);
+    this.db = drizzle(client);
   }
 
   // Songs
