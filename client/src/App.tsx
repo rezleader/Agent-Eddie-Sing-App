@@ -217,7 +217,7 @@ function AdminRoutes() {
     );
   }
 
-  const handleCreateSong = async (data: { title: string; artist: string; audioFile: File }) => {
+  const handleCreateSong = async (data: { title: string; artist: string; album?: string; audioFile: File }) => {
     try {
       await createSong.mutateAsync(data);
       toast({

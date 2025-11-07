@@ -10,7 +10,7 @@ import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
-  onCreateSong: (data: { title: string; artist: string; audioFile: File }) => void;
+  onCreateSong: (data: { title: string; artist: string; album?: string; audioFile: File }) => void;
   onUpdateSong: (songId: string, data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number }) => void;
   onDeleteSong: (songId: string) => void;
   isUploading?: boolean;
@@ -23,6 +23,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
   const [formData, setFormData] = useState({
     title: "",
     artist: "Eddie Sing & The 31 Days",
+    album: "",
   });
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [wasUploading, setWasUploading] = useState(false);
@@ -40,7 +41,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
   // Close dialog and reset form after successful upload
   useEffect(() => {
     if (wasUploading && !isUploading) {
-      setFormData({ title: "", artist: "Eddie Sing & The 31 Days" });
+      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "" });
       setAudioFile(null);
       setDialogOpen(false);
       setWasUploading(false);
@@ -156,6 +157,17 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
                   placeholder="Eddie Sing & The 31 Days"
                   required
                   data-testid="input-song-artist"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="album">Album (optional)</Label>
+                <Input
+                  id="album"
+                  value={formData.album}
+                  onChange={(e) => setFormData(prev => ({ ...prev, album: e.target.value }))}
+                  placeholder="The 31 Days Album"
+                  data-testid="input-song-album"
                 />
               </div>
 
