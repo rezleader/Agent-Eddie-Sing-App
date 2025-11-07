@@ -16,7 +16,7 @@ const db = drizzle(client);
 
 const BUCKET_ID = '28342';
 const BEARER_TOKEN = process.env.ACRCLOUD_BEARER_TOKEN!;
-const BASE_URL = 'https://api-v2.acrcloud.com';
+const BASE_URL = 'https://console-api.acrcloud.com';
 
 async function listBucketFiles() {
   console.log(`\n📋 Listing all files in bucket ${BUCKET_ID}...`);
@@ -24,7 +24,7 @@ async function listBucketFiles() {
   const response = await fetch(`${BASE_URL}/api/buckets/${BUCKET_ID}/files`, {
     headers: {
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BEARER_TOKEN}`
+      'Authorization': `token ${BEARER_TOKEN}`
     }
   });
 
@@ -49,7 +49,7 @@ async function deleteAllFiles(fileIds: number[]) {
     method: 'DELETE',
     headers: {
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BEARER_TOKEN}`
+      'Authorization': `token ${BEARER_TOKEN}`
     }
   });
 
