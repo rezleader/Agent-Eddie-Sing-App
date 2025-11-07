@@ -23,6 +23,7 @@ interface ACRCloudResponse {
   };
   metadata?: {
     music?: ACRCloudMusic[];
+    custom_files?: ACRCloudMusic[];
   };
 }
 
@@ -66,26 +67,44 @@ export class ACRCloudService {
 
     try {
       console.log('[ACRCloud] Starting audio recognition...');
+      console.log('[ACRCloud] Audio buffer size:', audioBuffer.length, 'bytes');
+      
       const response: ACRCloudResponse = await this.client.identify(audioBuffer);
+      
+      console.log('[ACRCloud] Full response:', JSON.stringify(response, null, 2));
 
       if (response.status.code !== 0) {
-        console.log(`[ACRCloud] Recognition failed: ${response.status.msg}`);
+        console.log(`[ACRCloud] Recognition failed: ${response.status.msg} (code: ${response.status.code})`);
         return null;
       }
 
       const music = response.metadata?.music?.[0];
-      if (!music) {
-        console.log('[ACRCloud] No music found in response');
+      const customFiles = response.metadata?.custom_files?.[0];
+      
+      console.log('[ACRCloud] Music found:', music ? 'YES' : 'NO');
+      console.log('[ACRCloud] Custom files found:', customFiles ? 'YES' : 'NO');
+      
+      if (!music && !customFiles) {
+        console.log('[ACRCloud] No music or custom files found in response');
+        console.log('[ACRCloud] Full metadata:', JSON.stringify(response.metadata, null, 2));
         return null;
       }
 
+      // Prefer custom files over commercial music
+      const source = customFiles || music;
+      
+      if (!source) {
+        console.log('[ACRCloud] Source is null/undefined');
+        return null;
+      }
+      
       const result: RecognitionResult = {
-        title: music.title,
-        artist: music.artists.map(a => a.name).join(', '),
-        album: music.album?.name,
-        playOffsetMs: music.play_offset_ms,
-        confidence: music.score / 100, // Convert 0-100 to 0-1
-        durationMs: music.duration_ms,
+        title: source.title,
+        artist: source.artists?.map((a: any) => a.name).join(', ') || 'Unknown',
+        album: source.album?.name,
+        playOffsetMs: source.play_offset_ms || 0,
+        confidence: source.score / 100, // Convert 0-100 to 0-1
+        durationMs: source.duration_ms,
       };
 
       console.log('[ACRCloud] Recognition successful:', {
@@ -93,6 +112,7 @@ export class ACRCloudService {
         artist: result.artist,
         offset: `${(result.playOffsetMs / 1000).toFixed(1)}s`,
         confidence: `${(result.confidence * 100).toFixed(0)}%`,
+        source: customFiles ? 'CUSTOM_BUCKET' : 'COMMERCIAL_DB'
       });
 
       return result;
