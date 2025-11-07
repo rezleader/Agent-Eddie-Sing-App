@@ -14,8 +14,8 @@ import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 
 // Configure multer for audio file uploads
-// Use /tmp/uploads for production compatibility (writable in deployments)
-const uploadDir = process.env.UPLOAD_DIR || path.join("/tmp", "uploads");
+// Use client/public/songs for permanent storage (survives deployments!)
+const uploadDir = path.join(process.cwd(), "client", "public", "songs");
 
 // Ensure upload directory exists
 mkdir(uploadDir, { recursive: true }).catch(console.error);
@@ -96,12 +96,8 @@ async function convertToPCMWav(inputPath: string): Promise<Buffer> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded files
-  app.use('/uploads', (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    next();
-  });
-  app.use('/uploads', express.static(uploadDir));
+  // Note: Audio files are served by Vite from client/public/songs as /songs/*
+  // No need for separate express.static middleware
 
   // Songs endpoints
   app.get("/api/songs", async (_req, res) => {
@@ -140,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         album: req.body.album || null,
         spotifyLink: req.body.spotifyLink || null,
         duration: duration,
-        audioPath: `/uploads/${req.file.filename}`,
+        audioPath: `/songs/${req.file.filename}`,
         albumArt: req.body.albumArt || null,
       };
 
