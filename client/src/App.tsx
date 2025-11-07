@@ -217,12 +217,12 @@ function AdminRoutes() {
     );
   }
 
-  const handleCreateSong = async (data: { title: string; artist: string; duration: number; audioFile: File }) => {
+  const handleCreateSong = async (data: { title: string; artist: string; audioFile: File }) => {
     try {
       await createSong.mutateAsync(data);
       toast({
         title: "Success",
-        description: "Song uploaded successfully",
+        description: "Song uploaded successfully (duration auto-detected)",
       });
     } catch (error) {
       toast({

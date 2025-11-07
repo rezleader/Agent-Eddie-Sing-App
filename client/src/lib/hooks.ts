@@ -18,14 +18,12 @@ export function useSong(id: string | null) {
 
 export function useCreateSong() {
   return useMutation({
-    mutationFn: async (data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number; audioFile: File }) => {
+    mutationFn: async (data: { title: string; artist: string; audioFile: File }) => {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("artist", data.artist);
-      if (data.album) formData.append("album", data.album);
-      if (data.spotifyLink) formData.append("spotifyLink", data.spotifyLink);
-      formData.append("duration", data.duration.toString());
       formData.append("audioFile", data.audioFile);
+      // Duration is auto-detected on the server
 
       const response = await fetch("/api/songs", {
         method: "POST",
