@@ -307,10 +307,10 @@ function AdminRoutes() {
   return (
     <AdminLayout>
       <Switch>
-        <Route path="/admin">
+        <Route path="/">
           <AdminDashboard stats={stats || defaultStats} />
         </Route>
-        <Route path="/admin/songs">
+        <Route path="/songs">
           {songsLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -325,7 +325,7 @@ function AdminRoutes() {
             />
           )}
         </Route>
-        <Route path="/admin/challenges">
+        <Route path="/challenges">
           {challengesLoading || songsLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -339,7 +339,7 @@ function AdminRoutes() {
             />
           )}
         </Route>
-        <Route path="/admin/settings">
+        <Route path="/settings">
           <Settings />
         </Route>
       </Switch>
