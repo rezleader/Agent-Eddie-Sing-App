@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,21 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [wasUploading, setWasUploading] = useState(false);
+
+  // Close dialog and reset form after successful upload
+  useEffect(() => {
+    if (wasUploading && !isUploading) {
+      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", duration: 0 });
+      setMinutes(0);
+      setSeconds(0);
+      setAudioFile(null);
+      setDialogOpen(false);
+      setWasUploading(false);
+    } else if (isUploading) {
+      setWasUploading(true);
+    }
+  }, [isUploading, wasUploading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +52,7 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
         album: formData.album || undefined,
         audioFile,
       });
-      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", duration: 0 });
-      setMinutes(0);
-      setSeconds(0);
-      setAudioFile(null);
-      setDialogOpen(false);
+      // Don't close dialog or reset form here - let useEffect handle it after upload completes
     }
   };
 
@@ -79,14 +90,26 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Upload New Song</DialogTitle>
-              <DialogDescription>
-                Add a new Agent Eddie Sing track to the catalog
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="w-16 h-16 animate-spin text-primary" />
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-semibold">Uploading Song...</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Give us a minute to upload your song
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Upload New Song</DialogTitle>
+                  <DialogDescription>
+                    Add a new Agent Eddie Sing track to the catalog
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Song Title</Label>
                 <Input
@@ -188,6 +211,8 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
                 )}
               </Button>
             </form>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>
