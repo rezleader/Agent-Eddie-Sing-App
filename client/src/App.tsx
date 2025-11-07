@@ -291,6 +291,7 @@ function AdminRoutes() {
               songs={songs}
               onCreateSong={handleCreateSong}
               onDeleteSong={handleDeleteSong}
+              isUploading={createSong.isPending}
             />
           )}
         </Route>
