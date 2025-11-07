@@ -11,6 +11,7 @@ import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/AdminDashboard";
 import { SongsManager } from "@/pages/admin/SongsManager";
 import { ChallengesManager } from "@/pages/admin/ChallengesManager";
+import { Settings } from "@/pages/admin/Settings";
 import { useState, useEffect } from "react";
 import { 
   useCreateSession, 
@@ -113,7 +114,8 @@ function UserRoutes() {
     return (
       <AdminLogin
         onLogin={(password) => {
-          if (password === "admin123") {
+          const storedPassword = localStorage.getItem("adminPassword") || "admin123";
+          if (password === storedPassword) {
             localStorage.setItem("adminAuth", "true");
             window.location.href = "/admin";
           } else {
@@ -180,7 +182,8 @@ function AdminRoutes() {
   const deleteChallenge = useDeleteChallenge();
 
   const handleLogin = (password: string) => {
-    if (password === "admin123") {
+    const storedPassword = localStorage.getItem("adminPassword") || "admin123";
+    if (password === storedPassword) {
       localStorage.setItem("adminAuth", "true");
       setIsAuthenticated(true);
     } else {
@@ -304,6 +307,9 @@ function AdminRoutes() {
               onDeleteChallenge={handleDeleteChallenge}
             />
           )}
+        </Route>
+        <Route path="/admin/settings">
+          <Settings />
         </Route>
       </Switch>
     </AdminLayout>
