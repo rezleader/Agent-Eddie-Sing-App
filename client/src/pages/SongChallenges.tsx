@@ -108,6 +108,11 @@ export function SongChallenges({
                 <CardDescription className="text-lg mt-1" data-testid="text-song-artist">
                   {song.artist}
                 </CardDescription>
+                {song.album && (
+                  <p className="text-base text-muted-foreground mt-1" data-testid="text-song-album">
+                    Album: {song.album}
+                  </p>
+                )}
                 <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground" data-testid="text-song-duration">
                   <Clock className="w-4 h-4" />
                   <span>{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
