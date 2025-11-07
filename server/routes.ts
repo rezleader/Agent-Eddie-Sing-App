@@ -14,7 +14,8 @@ import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 
 // Configure multer for audio file uploads
-const uploadDir = path.join(process.cwd(), "uploads");
+// Use /tmp/uploads for production compatibility (writable in deployments)
+const uploadDir = process.env.UPLOAD_DIR || path.join("/tmp", "uploads");
 
 // Ensure upload directory exists
 mkdir(uploadDir, { recursive: true }).catch(console.error);
