@@ -422,6 +422,7 @@ function Router() {
       <Route path="/songs/:id/challenges">
         {(params) => <SongChallengesRoute params={params} />}
       </Route>
+      <Route path="/admin" component={AdminRoutes} />
       <Route path="/admin/:rest*" component={AdminRoutes} />
       <Route path="/" component={UserRoutes} />
       <Route component={NotFound} />
