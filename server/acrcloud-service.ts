@@ -68,8 +68,12 @@ export class ACRCloudService {
     try {
       console.log('[ACRCloud] Starting audio recognition...');
       console.log('[ACRCloud] Audio buffer size:', audioBuffer.length, 'bytes');
+      console.log('[ACRCloud] Searching custom bucket (project 87689)...');
       
-      const response: ACRCloudResponse = await this.client.identify(audioBuffer);
+      const response: ACRCloudResponse = await this.client.identify(audioBuffer, { 
+        recognize_type: 'audio',
+        custom_records: 1 
+      });
       
       console.log('[ACRCloud] Full response:', JSON.stringify(response, null, 2));
 
