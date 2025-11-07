@@ -147,21 +147,33 @@ export function useCompleteChallenge() {
 export function useRecognizeSong() {
   return useMutation({
     mutationFn: async (audioBlob: Blob) => {
+      console.log('[Recognition] Starting recognition...');
+      console.log('[Recognition] Blob size:', audioBlob.size, 'bytes');
+      console.log('[Recognition] Blob type:', audioBlob.type);
+      
       const formData = new FormData();
       // Convert blob to file with proper extension
       const audioFile = new File([audioBlob], 'recording.webm', { type: audioBlob.type });
       formData.append("audioFile", audioFile);
+      
+      console.log('[Recognition] Sending request to /api/recognize...');
 
       const response = await fetch("/api/recognize", {
         method: "POST",
         body: formData,
       });
+      
+      console.log('[Recognition] Response status:', response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Recognition] Error response:', errorText);
         throw new Error("Failed to recognize song");
       }
 
-      return response.json() as Promise<{
+      const result = await response.json();
+      console.log('[Recognition] Success:', result);
+      return result as Promise<{
         song: Song;
         challenges: Challenge[];
         segment: number;
