@@ -21,7 +21,7 @@ export class ACRCloudUploadService {
   private bucketId: string | null = null;
   private bearerToken: string | null = null;
   private isConfigured: boolean = false;
-  private baseUrl = 'https://console-api.acrcloud.com';
+  private baseUrl = 'https://api-v2.acrcloud.com';
 
   constructor() {
     this.bucketId = process.env.ACRCLOUD_BUCKET_ID || null;
@@ -80,7 +80,7 @@ export class ACRCloudUploadService {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Authorization': `token ${this.bearerToken}`,
+          'Authorization': `Bearer ${this.bearerToken}`,
           ...form.getHeaders(),
         },
         body: form,
