@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 const BEARER_TOKEN = process.env.ACRCLOUD_BEARER_TOKEN!;
-const BASE_URL = 'https://api-v2.acrcloud.com';
+const BASE_URL = 'https://console-api.acrcloud.com';
 
 async function listBuckets() {
   console.log('🔍 Checking which buckets we can access...\n');
@@ -9,7 +9,7 @@ async function listBuckets() {
   const response = await fetch(`${BASE_URL}/api/buckets`, {
     headers: {
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BEARER_TOKEN}`
+      'Authorization': `token ${BEARER_TOKEN}`
     }
   });
 
