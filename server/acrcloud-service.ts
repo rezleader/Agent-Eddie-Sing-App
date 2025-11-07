@@ -1,4 +1,5 @@
-const ACRCloud = require('acrcloud');
+// @ts-ignore - acrcloud package lacks proper TypeScript definitions
+import ACRCloud from 'acrcloud';
 
 interface ACRCloudConfig {
   host: string;

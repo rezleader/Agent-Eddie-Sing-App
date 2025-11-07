@@ -7,6 +7,8 @@ import path from "path";
 import { mkdir } from "fs/promises";
 import { insertSongSchema, insertChallengeSchema, type InsertSong, type InsertChallenge } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { acrCloudService } from "./acrcloud-service";
+import { readFile } from "fs/promises";
 
 // Configure multer for audio file uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -237,45 +239,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Song recognition endpoint with segment detection
+  // Song recognition endpoint with ACRCloud integration
   app.post("/api/recognize", upload.single('audioFile'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "Audio file is required" });
       }
 
-      // TODO: Implement real audio fingerprinting to identify the song
-      // For now, return the first song as a mock match
       const songs = await storage.getSongs();
       if (songs.length === 0) {
         return res.status(404).json({ error: "No songs in database" });
       }
 
-      const matchedSong = songs[0]; // Mock: return first song
-      
-      // TODO: Implement real audio analysis to detect which segment (minute) of the song
-      // This would involve:
-      // 1. Analyzing the audio characteristics (tempo, pitch, spectral features)
-      // 2. Comparing against stored fingerprints for each segment of the song
-      // 3. Determining which minute segment (1-4) best matches
-      
-      // For now, mock segment detection (randomly select 1-4)
-      // In production, this would be based on actual audio analysis
-      const detectedSegment = Math.floor(Math.random() * 4) + 1; // Random 1-4
-      
-      // Get challenges only for the detected segment
+      // Try ACRCloud recognition if configured
+      if (acrCloudService.isReady()) {
+        console.log('[Recognition] Using ACRCloud for song identification...');
+        
+        // Read the uploaded audio file
+        const audioBuffer = await readFile(req.file.path);
+        
+        // Recognize using ACRCloud
+        const recognition = await acrCloudService.recognizeAudio(audioBuffer);
+        
+        if (recognition) {
+          // Match ACRCloud result to our database songs
+          // Compare normalized titles (remove special chars, lowercase)
+          const normalizeTitle = (title: string) => 
+            title.toLowerCase()
+              .replace(/\(ai reimagined\)/gi, '')
+              .replace(/\(featuring [^)]+\)/gi, '')
+              .trim();
+          
+          const matchedSong = songs.find(song => {
+            const dbTitle = normalizeTitle(song.title);
+            const recognizedTitle = normalizeTitle(recognition.title);
+            return dbTitle.includes(recognizedTitle) || recognizedTitle.includes(dbTitle);
+          });
+
+          if (matchedSong) {
+            // Calculate segment from play offset (time in song)
+            // Segments are 60-second intervals: 0-59s = segment 1, 60-119s = segment 2, etc.
+            const offsetSeconds = recognition.playOffsetMs / 1000;
+            const detectedSegment = Math.min(4, Math.max(1, Math.floor(offsetSeconds / 60) + 1));
+            
+            // Get challenges for this segment
+            const segmentChallenges = await storage.getChallengesBySegment(matchedSong.id, detectedSegment);
+            
+            console.log(`[Recognition] ✅ Matched: "${recognition.title}" → "${matchedSong.title}", Segment: ${detectedSegment} (${offsetSeconds.toFixed(1)}s), Confidence: ${(recognition.confidence * 100).toFixed(0)}%`);
+
+            return res.json({
+              song: matchedSong,
+              challenges: segmentChallenges,
+              segment: detectedSegment,
+              confidence: recognition.confidence,
+            });
+          } else {
+            console.log(`[Recognition] ⚠️ ACRCloud found "${recognition.title}" but no database match`);
+          }
+        } else {
+          console.log('[Recognition] ⚠️ ACRCloud could not identify the audio');
+        }
+      }
+
+      // Fallback: Return mock data if ACRCloud not configured or failed
+      console.log('[Recognition] Using fallback mode (mock data)');
+      const matchedSong = songs[0];
+      const detectedSegment = Math.floor(Math.random() * 4) + 1;
       const segmentChallenges = await storage.getChallengesBySegment(matchedSong.id, detectedSegment);
       
-      console.log(`Recognized: ${matchedSong.title}, Segment: ${detectedSegment}, Challenges: ${segmentChallenges.length}`);
+      console.log(`[Recognition] Fallback: ${matchedSong.title}, Segment: ${detectedSegment}`);
 
       res.json({
         song: matchedSong,
         challenges: segmentChallenges,
         segment: detectedSegment,
-        confidence: 0.95, // Mock confidence score
+        confidence: 0.50, // Lower confidence for fallback
       });
     } catch (error) {
-      console.error("Error recognizing song:", error);
+      console.error("[Recognition] Error:", error);
       res.status(500).json({ error: "Failed to recognize song" });
     }
   });
