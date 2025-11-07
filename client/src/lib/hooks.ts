@@ -18,10 +18,13 @@ export function useSong(id: string | null) {
 
 export function useCreateSong() {
   return useMutation({
-    mutationFn: async (data: { title: string; artist: string; audioFile: File }) => {
+    mutationFn: async (data: { title: string; artist: string; album?: string; audioFile: File }) => {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("artist", data.artist);
+      if (data.album) {
+        formData.append("album", data.album);
+      }
       formData.append("audioFile", data.audioFile);
       // Duration is auto-detected on the server
 
