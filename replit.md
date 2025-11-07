@@ -77,6 +77,16 @@ Preferred communication style: Simple, everyday language.
   - Detects which 60-second segment (1-4) user is listening to based on play offset
   - Fallback to mock data if ACRCloud not configured
   - Requires ACRCLOUD_ACCESS_KEY, ACRCLOUD_ACCESS_SECRET, ACRCLOUD_HOST environment variables
+- **ACRCloud auto-upload service** - Automatic bucket upload during song creation
+  - Uploads songs to ACRCloud bucket (ID: 28342) via Console API
+  - Triggered automatically when admin uploads songs via admin panel
+  - Uses ACRCLOUD_BUCKET_ID and ACRCLOUD_BEARER_TOKEN environment variables
+  - Returns acrid for tracking uploaded songs
+  - Graceful fallback when not configured (logs warning)
+- **Server-side audio duration detection** - ffprobe-based auto-detection
+  - Extracts duration from uploaded audio files using fluent-ffmpeg
+  - 180-second fallback if ffprobe unavailable or detection fails
+  - Eliminates manual duration entry in admin panel
 - Challenge completion validation with duplicate prevention
 - Point accumulation system
 - Session management with localStorage persistence
