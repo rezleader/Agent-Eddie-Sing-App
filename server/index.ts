@@ -47,6 +47,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Temporary: Log production database URL for sync setup
+  if (process.env.NODE_ENV === 'production' && !process.env.PRODUCTION_DATABASE_URL) {
+    console.log('🔑 PRODUCTION DATABASE URL (copy this for PRODUCTION_DATABASE_URL secret):');
+    console.log(process.env.DATABASE_URL);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
