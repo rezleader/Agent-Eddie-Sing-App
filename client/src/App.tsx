@@ -336,9 +336,77 @@ function AdminRoutes() {
   );
 }
 
+function SongChallengesRoute({ params }: { params: { id: string } }) {
+  const { data: song, isLoading: songLoading } = useSong(params.id);
+  const { data: challenges = [], isLoading: challengesLoading } = useSongChallenges(params.id);
+  const [sessionToken, setSessionToken] = useState<string | null>(() => {
+    return localStorage.getItem("sessionToken");
+  });
+  const { toast } = useToast();
+  const createSession = useCreateSession();
+  const { data: session } = useUserSession(sessionToken);
+  const completeChallenge = useCompleteChallenge();
+
+  useEffect(() => {
+    if (!sessionToken) {
+      createSession.mutate(undefined, {
+        onSuccess: async (response) => {
+          const newSession = await response.json();
+          setSessionToken(newSession.sessionToken);
+          localStorage.setItem("sessionToken", newSession.sessionToken);
+        },
+      });
+    }
+  }, [sessionToken]);
+
+  if (songLoading || challengesLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!song) {
+    return <NotFound />;
+  }
+
+  const handleAcceptChallenge = async (challengeId: string) => {
+    if (!sessionToken) return;
+
+    try {
+      await completeChallenge.mutateAsync({ sessionToken, challengeId });
+      toast({
+        title: "Challenge completed!",
+        description: `You've earned points for completing this challenge.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to complete challenge",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <SongChallenges
+      song={song}
+      challenges={challenges}
+      completedChallengeIds={(session?.completedChallenges as string[]) || []}
+      totalPoints={session?.totalPoints || 0}
+      onAcceptChallenge={handleAcceptChallenge}
+      onBack={() => window.location.href = "/"}
+    />
+  );
+}
+
 function Router() {
   return (
     <Switch>
+      <Route path="/songs/:id/challenges">
+        {(params) => <SongChallengesRoute params={params} />}
+      </Route>
       <Route path="/" component={UserRoutes} />
       <Route path="/admin" nest component={AdminRoutes} />
       <Route component={NotFound} />
