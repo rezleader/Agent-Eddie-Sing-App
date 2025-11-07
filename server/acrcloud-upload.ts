@@ -39,8 +39,9 @@ export class ACRCloudUploadService {
   /**
    * Upload audio file as fingerprint to ACRCloud bucket
    * This generates a robust fingerprint that works with compressed audio (like SoundCloud)
+   * @param songId - Unique identifier for the song (prevents duplicates via custom_file_id)
    */
-  async uploadAudioFile(filePath: string, title: string, artist: string, album?: string | null): Promise<string | null> {
+  async uploadAudioFile(filePath: string, title: string, artist: string, songId: string, album?: string | null): Promise<string | null> {
     if (!this.isConfigured) {
       console.warn('[ACRCloud Upload] Service not configured, cannot upload');
       return null;
@@ -66,6 +67,7 @@ export class ACRCloudUploadService {
       form.append('file', fs.createReadStream(fingerprintPath));
       form.append('title', title);
       form.append('data_type', 'fingerprint'); // KEY CHANGE: Upload as fingerprint, not audio
+      form.append('custom_file_id', songId); // CRITICAL: Makes uploads idempotent - prevents duplicates!
       
       // Add metadata as JSON string
       const metadata: Record<string, string> = { artist };
