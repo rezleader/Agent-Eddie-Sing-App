@@ -22,17 +22,23 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
     album: "",
     duration: 0,
   });
+  const [minutes, setMinutes] = useState(0);
+  const [seconds, setSeconds] = useState(0);
   const [audioFile, setAudioFile] = useState<File | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (audioFile && formData.title && formData.artist && formData.duration > 0) {
+    const totalSeconds = minutes * 60 + seconds;
+    if (audioFile && formData.title && formData.artist && totalSeconds > 0) {
       onCreateSong({
         ...formData,
+        duration: totalSeconds,
         album: formData.album || undefined,
         audioFile,
       });
       setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", duration: 0 });
+      setMinutes(0);
+      setSeconds(0);
       setAudioFile(null);
       setDialogOpen(false);
     }
@@ -46,7 +52,10 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
       // Try to get duration from audio file
       const audio = new Audio(URL.createObjectURL(file));
       audio.addEventListener('loadedmetadata', () => {
-        setFormData(prev => ({ ...prev, duration: Math.floor(audio.duration) }));
+        const totalSeconds = Math.floor(audio.duration);
+        setMinutes(Math.floor(totalSeconds / 60));
+        setSeconds(totalSeconds % 60);
+        setFormData(prev => ({ ...prev, duration: totalSeconds }));
       });
     }
   };
@@ -113,16 +122,36 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (seconds)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.duration || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
-                  placeholder="240"
-                  required
-                  data-testid="input-song-duration"
-                />
+                <Label>Duration</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                    <Input
+                      id="minutes"
+                      type="number"
+                      min="0"
+                      value={minutes || ""}
+                      onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
+                      placeholder="3"
+                      required
+                      data-testid="input-song-minutes"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="seconds" className="text-xs text-muted-foreground">Seconds</Label>
+                    <Input
+                      id="seconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={seconds || ""}
+                      onChange={(e) => setSeconds(Math.min(59, parseInt(e.target.value) || 0))}
+                      placeholder="45"
+                      required
+                      data-testid="input-song-seconds"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

@@ -26,7 +26,7 @@ const storage_config = multer.diskStorage({
 
 const upload = multer({
   storage: storage_config,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for audio files
   fileFilter: (_req, file, cb) => {
     // Accept audio files only
     if (file.mimetype.startsWith('audio/')) {
