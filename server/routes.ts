@@ -258,6 +258,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leaderboard endpoint
+  app.get("/api/leaderboard", async (req, res) => {
+    try {
+      const allSessions = await storage.getAllUserSessions();
+      const requestSessionToken = req.query.sessionToken as string | undefined;
+      
+      // Sort by total points descending
+      const sortedSessions = allSessions
+        .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+        .slice(0, 100); // Top 100 players
+      
+      // Sanitize response - don't expose session tokens
+      const sanitizedLeaderboard = sortedSessions.map((session, index) => {
+        const completedCount = Array.isArray(session.completedChallenges) 
+          ? (session.completedChallenges as string[]).length 
+          : 0;
+        
+        return {
+          rank: index + 1,
+          playerId: session.id.substring(0, 8), // Use session ID, not token
+          totalPoints: session.totalPoints || 0,
+          completedChallenges: completedCount,
+          isCurrentUser: requestSessionToken ? session.sessionToken === requestSessionToken : false,
+        };
+      });
+      
+      res.json(sanitizedLeaderboard);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch leaderboard" });
+    }
+  });
+
   // Admin stats endpoint
   app.get("/api/admin/stats", async (_req, res) => {
     try {

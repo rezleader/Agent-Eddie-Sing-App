@@ -1,16 +1,17 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Music, Loader2, StopCircle } from "lucide-react";
+import { Mic, Music, Loader2, StopCircle, Trophy } from "lucide-react";
 import { PointsDisplay } from "@/components/PointsDisplay";
 
 interface UserScannerProps {
   onSongDetected: (audioBlob: Blob) => void;
   totalPoints: number;
   isRecognizing?: boolean;
+  onViewLeaderboard?: () => void;
 }
 
-export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false }: UserScannerProps) {
+export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false, onViewLeaderboard }: UserScannerProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -83,7 +84,20 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
               Agent Eddie Sing ARG
             </p>
           </div>
-          <PointsDisplay points={totalPoints} size="lg" />
+          <div className="flex items-center gap-3 flex-wrap">
+            {onViewLeaderboard && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={onViewLeaderboard}
+                data-testid="button-view-leaderboard"
+              >
+                <Trophy className="w-5 h-5 mr-2" />
+                Leaderboard
+              </Button>
+            )}
+            <PointsDisplay points={totalPoints} size="lg" />
+          </div>
         </div>
 
         {/* Main scanner card */}
