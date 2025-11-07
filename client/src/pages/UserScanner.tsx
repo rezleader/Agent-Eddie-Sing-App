@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Music, Loader2, StopCircle, Trophy } from "lucide-react";
+import { Mic, Music, Loader2, StopCircle, Trophy, Shield } from "lucide-react";
 import { PointsDisplay } from "@/components/PointsDisplay";
 
 interface UserScannerProps {
@@ -9,9 +9,10 @@ interface UserScannerProps {
   totalPoints: number;
   isRecognizing?: boolean;
   onViewLeaderboard?: () => void;
+  onAdminLogin?: () => void;
 }
 
-export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false, onViewLeaderboard }: UserScannerProps) {
+export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false, onViewLeaderboard, onAdminLogin }: UserScannerProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -85,6 +86,17 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
+            {onAdminLogin && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={onAdminLogin}
+                data-testid="button-admin-login"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            )}
             {onViewLeaderboard && (
               <Button 
                 variant="outline" 

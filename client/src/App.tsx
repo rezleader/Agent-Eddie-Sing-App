@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserScanner } from "@/pages/UserScanner";
 import { SongChallenges } from "@/pages/SongChallenges";
 import { Leaderboard } from "@/pages/Leaderboard";
+import { AdminLogin } from "@/pages/admin/AdminLogin";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/AdminDashboard";
 import { SongsManager } from "@/pages/admin/SongsManager";
@@ -30,7 +31,7 @@ import { type Song, type Challenge } from "@shared/schema";
 import NotFound from "@/pages/not-found";
 
 function UserRoutes() {
-  const [currentView, setCurrentView] = useState<"scanner" | "challenges" | "leaderboard">("scanner");
+  const [currentView, setCurrentView] = useState<"scanner" | "challenges" | "leaderboard" | "admin-login">("scanner");
   const [sessionToken, setSessionToken] = useState<string | null>(() => {
     return localStorage.getItem("sessionToken");
   });
@@ -108,6 +109,26 @@ function UserRoutes() {
     }
   };
 
+  if (currentView === "admin-login") {
+    return (
+      <AdminLogin
+        onLogin={(password) => {
+          if (password === "admin123") {
+            localStorage.setItem("adminAuth", "true");
+            window.location.href = "/admin";
+          } else {
+            toast({
+              title: "Access Denied",
+              description: "Incorrect password",
+              variant: "destructive",
+            });
+          }
+        }}
+        onBack={() => setCurrentView("scanner")}
+      />
+    );
+  }
+
   if (currentView === "leaderboard") {
     return (
       <Leaderboard
@@ -124,6 +145,7 @@ function UserRoutes() {
         totalPoints={session?.totalPoints || 0}
         isRecognizing={recognizeSong.isPending}
         onViewLeaderboard={() => setCurrentView("leaderboard")}
+        onAdminLogin={() => setCurrentView("admin-login")}
       />
     );
   }
@@ -145,6 +167,9 @@ function UserRoutes() {
 }
 
 function AdminRoutes() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem("adminAuth") === "true";
+  });
   const { toast } = useToast();
   const { data: songs = [], isLoading: songsLoading } = useSongs();
   const { data: challenges = [], isLoading: challengesLoading } = useChallenges();
@@ -153,6 +178,28 @@ function AdminRoutes() {
   const deleteSong = useDeleteSong();
   const createChallenge = useCreateChallenge();
   const deleteChallenge = useDeleteChallenge();
+
+  const handleLogin = (password: string) => {
+    if (password === "admin123") {
+      localStorage.setItem("adminAuth", "true");
+      setIsAuthenticated(true);
+    } else {
+      toast({
+        title: "Access Denied",
+        description: "Incorrect password",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <AdminLogin
+        onLogin={handleLogin}
+        onBack={() => window.location.href = "/"}
+      />
+    );
+  }
 
   const handleCreateSong = async (data: { title: string; artist: string; duration: number; audioFile: File }) => {
     try {
