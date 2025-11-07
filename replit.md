@@ -38,6 +38,14 @@ Preferred communication style: Simple, everyday language.
 - Query-based data fetching with optimistic updates
 - Card-based layouts optimized for mobile interactions
 
+**Routing Architecture:**
+- Main router uses single catch-all route for admin: `<Route path="/admin/:rest*" component={AdminRoutes} />`
+- AdminRoutes wraps content in `<WouterRouter base="/admin">` for base-relative routing
+- Admin nested routes use relative paths (`/`, `/songs`, `/challenges`, `/settings`)
+- Root-level navigation function passed to AdminLayout for SPA navigation to Scanner
+- Active state detection in sidebar uses base-relative path comparison
+- Scanner link (non-admin) uses root navigation handler to escape base router context
+
 **Key Frontend Components:**
 - `UserScanner`: Audio recording interface using Web Audio API with leaderboard access
 - `SongChallenges`: Challenge browsing and filtering by segment/category

@@ -1,6 +1,6 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Music2, FileText, Settings as SettingsIcon, LogOut, Scan } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
@@ -8,34 +8,40 @@ const menuItems = [
     title: "Scanner",
     url: "/",
     icon: Scan,
+    absolute: true,  // Non-admin route needs absolute path
   },
   {
     title: "Dashboard",
-    url: "/admin",
+    url: "/",
     icon: LayoutDashboard,
+    absolute: false,  // Relative to /admin base
   },
   {
     title: "Songs",
-    url: "/admin/songs",
+    url: "/songs",
     icon: Music2,
+    absolute: false,  // Relative to /admin base
   },
   {
     title: "Challenges",
-    url: "/admin/challenges",
+    url: "/challenges",
     icon: FileText,
+    absolute: false,  // Relative to /admin base
   },
   {
     title: "Settings",
-    url: "/admin/settings",
+    url: "/settings",
     icon: SettingsIcon,
+    absolute: false,  // Relative to /admin base
   },
 ];
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  onNavigateToScanner?: () => void;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ children, onNavigateToScanner }: AdminLayoutProps) {
   const [location] = useLocation();
   
   const handleLogout = () => {
@@ -61,14 +67,34 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <SidebarMenu>
                   {menuItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = location === item.url;
+                    // useLocation() inside Router base="/admin" returns base-relative paths
+                    // So location will be "/songs" when at "/admin/songs"
+                    // Skip active state for absolute items (Scanner) to avoid conflicts
+                    const isActive = !item.absolute && location === item.url;
+                    
+                    // For absolute paths (like Scanner), use onClick handler with root navigation
+                    if (item.absolute) {
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            data-active={isActive}
+                            onClick={() => onNavigateToScanner?.()}
+                          >
+                            <Icon className="w-4 h-4" />
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    }
+                    
+                    // For relative paths within admin, use Link
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild data-active={isActive}>
-                          <a href={item.url}>
+                          <Link href={item.url}>
                             <Icon className="w-4 h-4" />
                             <span>{item.title}</span>
-                          </a>
+                          </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
