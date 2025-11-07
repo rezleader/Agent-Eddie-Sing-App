@@ -9,6 +9,7 @@ export const songs = pgTable("songs", {
   title: text("title").notNull(),
   artist: text("artist").notNull().default("Eddie Sing & The 31 Days"),
   album: text("album"), // album name
+  spotifyLink: text("spotify_link"), // link to song on Spotify
   duration: integer("duration").notNull(), // in seconds
   audioPath: text("audio_path").notNull(), // file path to uploaded audio
   albumArt: text("album_art"), // optional album art URL

@@ -10,8 +10,8 @@ import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
-  onCreateSong: (data: { title: string; artist: string; album?: string; duration: number; audioFile: File }) => void;
-  onUpdateSong: (songId: string, data: { title: string; artist: string; album?: string; duration: number }) => void;
+  onCreateSong: (data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number; audioFile: File }) => void;
+  onUpdateSong: (songId: string, data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number }) => void;
   onDeleteSong: (songId: string) => void;
   isUploading?: boolean;
 }
@@ -24,6 +24,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
     title: "",
     artist: "Eddie Sing & The 31 Days",
     album: "",
+    spotifyLink: "",
     duration: 0,
   });
   const [minutes, setMinutes] = useState(0);
@@ -37,13 +38,14 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
     title: "",
     artist: "",
     album: "",
+    spotifyLink: "",
     duration: 0,
   });
 
   // Close dialog and reset form after successful upload
   useEffect(() => {
     if (wasUploading && !isUploading) {
-      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", duration: 0 });
+      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", spotifyLink: "", duration: 0 });
       setMinutes(0);
       setSeconds(0);
       setAudioFile(null);
@@ -62,6 +64,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
         ...formData,
         duration: totalSeconds,
         album: formData.album || undefined,
+        spotifyLink: formData.spotifyLink || undefined,
         audioFile,
       });
       // Don't close dialog or reset form here - let useEffect handle it after upload completes
@@ -90,6 +93,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
       title: song.title,
       artist: song.artist,
       album: song.album || "",
+      spotifyLink: song.spotifyLink || "",
       duration: song.duration,
     });
     setEditMinutes(Math.floor(song.duration / 60));
@@ -105,6 +109,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
         title: editFormData.title,
         artist: editFormData.artist,
         album: editFormData.album,
+        spotifyLink: editFormData.spotifyLink,
         duration: totalSeconds,
       });
       setEditDialogOpen(false);
@@ -182,6 +187,17 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
                   onChange={(e) => setFormData(prev => ({ ...prev, album: e.target.value }))}
                   placeholder="The 31 Days Album"
                   data-testid="input-song-album"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="spotifyLink">Spotify Link (optional)</Label>
+                <Input
+                  id="spotifyLink"
+                  value={formData.spotifyLink}
+                  onChange={(e) => setFormData(prev => ({ ...prev, spotifyLink: e.target.value }))}
+                  placeholder="https://open.spotify.com/track/..."
+                  data-testid="input-song-spotify-link"
                 />
               </div>
 
@@ -299,6 +315,17 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
                   onChange={(e) => setEditFormData(prev => ({ ...prev, album: e.target.value }))}
                   placeholder="The 31 Days Album"
                   data-testid="input-edit-song-album"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-spotifyLink">Spotify Link (optional)</Label>
+                <Input
+                  id="edit-spotifyLink"
+                  value={editFormData.spotifyLink}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, spotifyLink: e.target.value }))}
+                  placeholder="https://open.spotify.com/track/..."
+                  data-testid="input-edit-song-spotify-link"
                 />
               </div>
 

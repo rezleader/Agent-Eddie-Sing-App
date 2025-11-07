@@ -77,6 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: req.body.title,
         artist: req.body.artist || "Eddie Sing & The 31 Days",
         album: req.body.album || null,
+        spotifyLink: req.body.spotifyLink || null,
         duration: parseInt(req.body.duration),
         audioPath: `/uploads/${req.file.filename}`,
         albumArt: req.body.albumArt || null,
@@ -98,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.title) updateData.title = req.body.title;
       if (req.body.artist) updateData.artist = req.body.artist;
       if (req.body.album !== undefined) updateData.album = req.body.album || null;
+      if (req.body.spotifyLink !== undefined) updateData.spotifyLink = req.body.spotifyLink || null;
       if (req.body.duration) updateData.duration = parseInt(req.body.duration);
 
       const song = await storage.updateSong(req.params.id, updateData);
