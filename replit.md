@@ -72,7 +72,11 @@ Preferred communication style: Simple, everyday language.
 - User Sessions: Point tracking and completed challenge history (stored in JSONB array)
 
 **Business Logic:**
-- Audio fingerprinting placeholder for song recognition
+- **ACRCloud music recognition** - Custom audio fingerprinting for Eddie Sing's 11-song catalog
+  - Identifies songs from user-recorded audio clips
+  - Detects which 60-second segment (1-4) user is listening to based on play offset
+  - Fallback to mock data if ACRCloud not configured
+  - Requires ACRCLOUD_ACCESS_KEY, ACRCLOUD_ACCESS_SECRET, ACRCLOUD_HOST environment variables
 - Challenge completion validation with duplicate prevention
 - Point accumulation system
 - Session management with localStorage persistence
@@ -113,6 +117,7 @@ The application uses Drizzle ORM with PostgreSQL (Neon serverless):
 - Drizzle ORM - Type-safe database queries and migrations
 
 **Audio Processing:**
+- **ACRCloud (acrcloud)** - Music recognition API for custom song identification
 - Multer - Multipart file upload handling for audio files
 - Native Web Audio API - Client-side audio recording
 
