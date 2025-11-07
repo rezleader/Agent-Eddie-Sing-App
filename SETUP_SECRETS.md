@@ -11,7 +11,10 @@ This is your ACRCloud Console API token (different from recognition API credenti
 1. Log in to https://console.acrcloud.com
 2. Go to **Account → Console API → Access Token**
 3. Click "Create new token" if you don't have one
-4. Copy the bearer token
+4. **IMPORTANT:** Copy the **actual token string** (long encoded text like "eyJhbGci..."), NOT the scopes
+   - The scopes are just permissions like "bucket:write"
+   - The bearer token is the long authentication string
+5. The token should start with "Bearer " or just be the encoded string starting with "eyJ..."
 
 ### ACRCLOUD_BUCKET_ID
 This is your custom bucket ID number.
