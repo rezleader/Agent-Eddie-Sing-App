@@ -9,6 +9,8 @@ import { insertSongSchema, insertChallengeSchema, type InsertSong, type InsertCh
 import { randomUUID } from "crypto";
 import { acrCloudService } from "./acrcloud-service";
 import { readFile } from "fs/promises";
+import ffmpeg from "fluent-ffmpeg";
+import { PassThrough } from "stream";
 
 // Configure multer for audio file uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -38,6 +40,34 @@ const upload = multer({
     }
   }
 });
+
+// Convert WebM/audio to PCM WAV for better ACRCloud recognition
+async function convertToPCMWav(inputPath: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    const outputStream = new PassThrough();
+    
+    outputStream.on('data', (chunk) => chunks.push(chunk));
+    outputStream.on('end', () => resolve(Buffer.concat(chunks)));
+    outputStream.on('error', reject);
+    
+    console.log('[Audio Conversion] Converting to PCM WAV for ACRCloud...');
+    
+    ffmpeg(inputPath)
+      .audioFrequency(44100)  // 44.1 kHz sample rate
+      .audioChannels(1)        // Mono
+      .audioCodec('pcm_s16le') // 16-bit PCM
+      .format('wav')
+      .on('error', (err) => {
+        console.error('[Audio Conversion] Error:', err.message);
+        reject(err);
+      })
+      .on('end', () => {
+        console.log('[Audio Conversion] ✅ Conversion complete');
+      })
+      .pipe(outputStream, { end: true });
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
@@ -255,11 +285,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (acrCloudService.isReady()) {
         console.log('[Recognition] Using ACRCloud for song identification...');
         
-        // Read the uploaded audio file
-        const audioBuffer = await readFile(req.file.path);
+        // Convert WebM to PCM WAV for better fingerprint matching
+        // This removes double-lossy encoding and matches ACRCloud's requirements
+        const convertedBuffer = await convertToPCMWav(req.file.path);
         
-        // Recognize using ACRCloud
-        const recognition = await acrCloudService.recognizeAudio(audioBuffer);
+        // Recognize using ACRCloud with converted audio
+        const recognition = await acrCloudService.recognizeAudio(convertedBuffer);
         
         if (recognition) {
           // Match ACRCloud result to our database songs
