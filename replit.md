@@ -64,7 +64,11 @@ Preferred communication style: Simple, everyday language.
 - Drizzle ORM for type-safe database queries
 - HTTP-based Neon client (`drizzle-orm/neon-http`)
 - Abstracted storage interface (`IStorage`) for testability
-- File system storage for uploaded audio files in `/uploads` directory
+- **Replit Object Storage** for persistent song files (survives all deployments)
+  - Fetch-based ObjectStorageService using signed URL API (workaround for @google-cloud/storage npm install errors)
+  - Songs serve from `/public-objects/songs/` endpoint
+  - Streaming uploads/downloads via Express proxy
+  - 7 of 11 songs migrated; 4 need re-upload via admin panel
 
 **Data Models:**
 - Songs: Audio files with metadata (title, artist [auto-populated as "Eddie Sing & The 31 Days"], album, duration, file path)
@@ -164,7 +168,7 @@ The application uses Drizzle ORM with PostgreSQL (Neon serverless):
 
 **Key Architectural Choices:**
 
-1. **In-Memory Storage with Future Database Path**: Currently uses `MemStorage` class but schema is defined for PostgreSQL migration, allowing rapid prototyping while maintaining production-ready data models.
+1. **Object Storage for Song Persistence**: Replit Object Storage replaces ephemeral filesystem, ensuring songs survive all deployments. Fetch-based implementation bypasses @google-cloud/storage npm install errors.
 
 2. **Session-Based Anonymous Users**: No authentication system - users identified by session tokens, enabling frictionless onboarding critical for ARG participation.
 
