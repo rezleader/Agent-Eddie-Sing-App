@@ -9,6 +9,7 @@ The app enables users to:
 - Browse challenges organized by song segments (60-second intervals)
 - Complete various challenge types (ACTION, SHARE, KNOW, ALTERNATIVE)
 - Earn points for completing challenges
+- View leaderboard rankings showing top players by points
 - Share achievements on social media platforms
 
 ## User Preferences
@@ -38,11 +39,12 @@ Preferred communication style: Simple, everyday language.
 - Card-based layouts optimized for mobile interactions
 
 **Key Frontend Components:**
-- `UserScanner`: Audio recording interface using Web Audio API
+- `UserScanner`: Audio recording interface using Web Audio API with leaderboard access
 - `SongChallenges`: Challenge browsing and filtering by segment/category
 - `ChallengeCard`: Gamified challenge presentation with point displays
+- `Leaderboard`: Top 100 players ranked by total points with current user highlighting
 - `SocialShareModal`: Multi-platform sharing functionality
-- Admin interfaces for content management
+- Admin interfaces for content management (SongsManager, ChallengesManager)
 
 ### Backend Architecture
 
@@ -58,29 +60,40 @@ Preferred communication style: Simple, everyday language.
 - CORS-enabled file serving for uploaded audio
 
 **Storage Layer:**
-- In-memory storage implementation (`MemStorage` class)
-- Abstracted storage interface (`IStorage`) for future database migration
+- PostgreSQL database with Neon serverless adapter
+- Drizzle ORM for type-safe database queries
+- HTTP-based Neon client (`drizzle-orm/neon-http`)
+- Abstracted storage interface (`IStorage`) for testability
 - File system storage for uploaded audio files in `/uploads` directory
 
 **Data Models:**
-- Songs: Audio files with metadata (title, artist, duration, file path)
+- Songs: Audio files with metadata (title, artist [auto-populated as "Eddie Sing & The 31 Days"], album, duration, file path)
 - Challenges: Categorized tasks linked to song segments
-- User Sessions: Point tracking and completed challenge history
+- User Sessions: Point tracking and completed challenge history (stored in JSONB array)
 
 **Business Logic:**
 - Audio fingerprinting placeholder for song recognition
-- Challenge completion validation
+- Challenge completion validation with duplicate prevention
 - Point accumulation system
 - Session management with localStorage persistence
+- Leaderboard ranking system (top 100 players, anonymized player IDs)
+- Sanitized leaderboard API to prevent session token exposure
 
 ### Database Schema
 
-The application uses Drizzle ORM with PostgreSQL-compatible schema definitions:
+The application uses Drizzle ORM with PostgreSQL (Neon serverless):
 
 **Tables:**
-- `songs`: Audio metadata and file references
-- `challenges`: Challenge content with category/type/segment associations
-- `user_sessions`: Session tokens, points, and completion tracking (JSON array)
+- `songs`: Audio metadata (id, title, artist, album, audioFile, duration, createdAt)
+  - Artist field defaults to "Eddie Sing & The 31 Days"
+  - Album field added for organizing music collections
+- `challenges`: Challenge content (id, songId, segment, category, type, description, points, createdAt)
+  - Categories: "Love & Romance", "Racism", "Sexism", "Homo/Transphobia", "Threat of A.I."
+  - Types: "ACTION", "SHARE", "KNOW", "ALTERNATIVE"
+  - Segment: 1-4 (60-second intervals)
+- `user_sessions`: Session state (id, sessionToken, totalPoints, completedChallenges, createdAt, lastActive)
+  - completedChallenges stored as JSONB array of challenge IDs
+  - Anonymous identification via truncated session IDs
 
 **Relationships:**
 - Challenges reference songs via foreign key with cascade delete
@@ -91,6 +104,7 @@ The application uses Drizzle ORM with PostgreSQL-compatible schema definitions:
 - JSONB for flexible completed challenges array
 - Timestamp tracking for sessions and content creation
 - Text fields for categorical data (category, type) instead of enums for flexibility
+- HTTP-based Neon adapter (`drizzle-orm/neon-http`) for serverless compatibility
 
 ### External Dependencies
 
