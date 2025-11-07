@@ -91,6 +91,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/songs/:id", async (req, res) => {
+    try {
+      const updateData: Partial<InsertSong> = {};
+      
+      if (req.body.title) updateData.title = req.body.title;
+      if (req.body.artist) updateData.artist = req.body.artist;
+      if (req.body.album !== undefined) updateData.album = req.body.album || null;
+      if (req.body.duration) updateData.duration = parseInt(req.body.duration);
+
+      const song = await storage.updateSong(req.params.id, updateData);
+      if (!song) {
+        return res.status(404).json({ error: "Song not found" });
+      }
+      res.json(song);
+    } catch (error) {
+      console.error("Error updating song:", error);
+      res.status(500).json({ error: "Failed to update song" });
+    }
+  });
+
   app.delete("/api/songs/:id", async (req, res) => {
     try {
       await storage.deleteSong(req.params.id);

@@ -21,6 +21,7 @@ import {
   useSongs,
   useChallenges,
   useCreateSong,
+  useUpdateSong,
   useDeleteSong,
   useCreateChallenge,
   useDeleteChallenge,
@@ -177,6 +178,7 @@ function AdminRoutes() {
   const { data: challenges = [], isLoading: challengesLoading } = useChallenges();
   const { data: stats } = useAdminStats();
   const createSong = useCreateSong();
+  const updateSong = useUpdateSong();
   const deleteSong = useDeleteSong();
   const createChallenge = useCreateChallenge();
   const deleteChallenge = useDeleteChallenge();
@@ -215,6 +217,22 @@ function AdminRoutes() {
       toast({
         title: "Error",
         description: "Failed to upload song",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateSong = async (songId: string, data: { title: string; artist: string; album?: string; duration: number }) => {
+    try {
+      await updateSong.mutateAsync({ id: songId, data });
+      toast({
+        title: "Success",
+        description: "Song updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update song",
         variant: "destructive",
       });
     }
@@ -290,6 +308,7 @@ function AdminRoutes() {
             <SongsManager
               songs={songs}
               onCreateSong={handleCreateSong}
+              onUpdateSong={handleUpdateSong}
               onDeleteSong={handleDeleteSong}
               isUploading={createSong.isPending}
             />
