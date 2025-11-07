@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserScanner } from "@/pages/UserScanner";
 import { SongChallenges } from "@/pages/SongChallenges";
 import { Leaderboard } from "@/pages/Leaderboard";
+import { Resources } from "@/pages/Resources";
 import { AdminLogin } from "@/pages/admin/AdminLogin";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/AdminDashboard";
@@ -19,6 +20,7 @@ import {
   useCompleteChallenge, 
   useRecognizeSong,
   useSongs,
+  useSong,
   useChallenges,
   useCreateSong,
   useUpdateSong,
@@ -33,7 +35,7 @@ import { type Song, type Challenge } from "@shared/schema";
 import NotFound from "@/pages/not-found";
 
 function UserRoutes() {
-  const [currentView, setCurrentView] = useState<"scanner" | "challenges" | "leaderboard" | "admin-login">("scanner");
+  const [currentView, setCurrentView] = useState<"scanner" | "challenges" | "leaderboard" | "resources" | "admin-login">("scanner");
   const [sessionToken, setSessionToken] = useState<string | null>(() => {
     return localStorage.getItem("sessionToken");
   });
@@ -141,6 +143,14 @@ function UserRoutes() {
     );
   }
 
+  if (currentView === "resources") {
+    return (
+      <Resources
+        onBack={() => setCurrentView("scanner")}
+      />
+    );
+  }
+
   if (currentView === "scanner") {
     return (
       <UserScanner 
@@ -148,6 +158,7 @@ function UserRoutes() {
         totalPoints={session?.totalPoints || 0}
         isRecognizing={recognizeSong.isPending}
         onViewLeaderboard={() => setCurrentView("leaderboard")}
+        onViewResources={() => setCurrentView("resources")}
         onAdminLogin={() => setCurrentView("admin-login")}
       />
     );

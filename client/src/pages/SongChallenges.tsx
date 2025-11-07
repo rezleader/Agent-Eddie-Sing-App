@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { TimelineSegment } from "@/components/TimelineSegment";
 import { SocialShareModal } from "@/components/SocialShareModal";
+import { ChallengeCompletionModal } from "@/components/ChallengeCompletionModal";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,8 @@ export function SongChallenges({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareChallenge, setShareChallenge] = useState<Challenge | null>(null);
   const [sharePoints, setSharePoints] = useState(0);
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
 
   // Group challenges by segment
   const challengesBySegment = challenges.reduce((acc, challenge) => {
@@ -65,6 +68,8 @@ export function SongChallenges({
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
       onAcceptChallenge(challengeId);
+      setCompletedChallenge(challenge);
+      setCompletionModalOpen(true);
       // Auto-open share modal after accepting
       setShareChallenge(challenge);
       setSharePoints(challenge.points);
@@ -280,6 +285,14 @@ export function SongChallenges({
           )}
         </div>
       </div>
+
+      {/* Completion modal */}
+      <ChallengeCompletionModal
+        open={completionModalOpen}
+        onOpenChange={setCompletionModalOpen}
+        challenge={completedChallenge}
+        pointsEarned={completedChallenge?.points || 0}
+      />
 
       {/* Share modal */}
       <SocialShareModal
