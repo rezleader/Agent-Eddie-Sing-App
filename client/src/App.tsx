@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -307,10 +307,10 @@ function AdminRoutes() {
   return (
     <AdminLayout>
       <Switch>
-        <Route path="/">
+        <Route path="/admin">
           <AdminDashboard stats={stats || defaultStats} />
         </Route>
-        <Route path="/songs">
+        <Route path="/admin/songs">
           {songsLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -325,7 +325,7 @@ function AdminRoutes() {
             />
           )}
         </Route>
-        <Route path="/challenges">
+        <Route path="/admin/challenges">
           {challengesLoading || songsLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -339,7 +339,7 @@ function AdminRoutes() {
             />
           )}
         </Route>
-        <Route path="/settings">
+        <Route path="/admin/settings">
           <Settings />
         </Route>
       </Switch>
@@ -413,13 +413,35 @@ function SongChallengesRoute({ params }: { params: { id: string } }) {
 }
 
 function Router() {
+  const [location, setLocation] = useLocation();
+  
+  // Compute redirect target synchronously
+  let redirectTo = null;
+  if (location === '/admin/admin') {
+    redirectTo = '/admin';
+  } else if (location.startsWith('/admin/admin/')) {
+    redirectTo = location.replace('/admin/admin/', '/admin/');
+  }
+  
+  // Perform redirect in effect
+  useEffect(() => {
+    if (redirectTo) {
+      setLocation(redirectTo);
+    }
+  }, [redirectTo, setLocation]);
+  
+  // Don't render routes if we need to redirect
+  if (redirectTo) {
+    return null;
+  }
+  
   return (
     <Switch>
       <Route path="/songs/:id/challenges">
         {(params) => <SongChallengesRoute params={params} />}
       </Route>
       <Route path="/" component={UserRoutes} />
-      <Route path="/admin" nest component={AdminRoutes} />
+      <Route path="/admin/:rest*" component={AdminRoutes} />
       <Route component={NotFound} />
     </Switch>
   );
