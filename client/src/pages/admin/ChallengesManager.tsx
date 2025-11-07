@@ -231,29 +231,6 @@ export function ChallengesManager({ challenges, songs, onCreateChallenge, onDele
         <CardContent>
           <div className="flex flex-wrap gap-4">
             <div className="space-y-2">
-              <Label>Category</Label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={filterCategory === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterCategory("all")}
-                >
-                  All
-                </Button>
-                {challengeCategories.map(cat => (
-                  <Button
-                    key={cat}
-                    variant={filterCategory === cat ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterCategory(cat)}
-                  >
-                    {categoryDisplayNames[cat]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <Label>Type</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -271,6 +248,29 @@ export function ChallengesManager({ challenges, songs, onCreateChallenge, onDele
                     onClick={() => setFilterType(type)}
                   >
                     {type}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={filterCategory === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterCategory("all")}
+                >
+                  All
+                </Button>
+                {challengeCategories.map(cat => (
+                  <Button
+                    key={cat}
+                    variant={filterCategory === cat ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilterCategory(cat)}
+                  >
+                    {categoryDisplayNames[cat]}
                   </Button>
                 ))}
               </div>
