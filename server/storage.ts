@@ -8,6 +8,7 @@ export interface IStorage {
   getSongs(): Promise<Song[]>;
   getSong(id: string): Promise<Song | undefined>;
   createSong(song: InsertSong): Promise<Song>;
+  updateSong(id: string, song: Partial<InsertSong>): Promise<Song | undefined>;
   deleteSong(id: string): Promise<void>;
   
   // Challenges
@@ -52,6 +53,15 @@ export class PostgresStorage implements IStorage {
     const result = await this.db
       .insert(songs)
       .values(insertSong)
+      .returning();
+    return result[0];
+  }
+
+  async updateSong(id: string, updateData: Partial<InsertSong>): Promise<Song | undefined> {
+    const result = await this.db
+      .update(songs)
+      .set(updateData)
+      .where(eq(songs.id, id))
       .returning();
     return result[0];
   }

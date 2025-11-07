@@ -43,6 +43,17 @@ export function useCreateSong() {
   });
 }
 
+export function useUpdateSong() {
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { title: string; artist: string; album?: string; duration: number } }) => {
+      return await apiRequest("PATCH", `/api/songs/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/songs"] });
+    },
+  });
+}
+
 export function useDeleteSong() {
   return useMutation({
     mutationFn: async (id: string) => {

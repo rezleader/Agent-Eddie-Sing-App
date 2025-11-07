@@ -5,18 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Music2, Plus, Trash2, Upload, Loader2 } from "lucide-react";
+import { Music2, Plus, Trash2, Upload, Loader2, Pencil } from "lucide-react";
 import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
   onCreateSong: (data: { title: string; artist: string; album?: string; duration: number; audioFile: File }) => void;
+  onUpdateSong: (songId: string, data: { title: string; artist: string; album?: string; duration: number }) => void;
   onDeleteSong: (songId: string) => void;
   isUploading?: boolean;
 }
 
-export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = false }: SongsManagerProps) {
+export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, isUploading = false }: SongsManagerProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     artist: "Eddie Sing & The 31 Days",
@@ -27,6 +30,15 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
   const [seconds, setSeconds] = useState(0);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [wasUploading, setWasUploading] = useState(false);
+  
+  const [editMinutes, setEditMinutes] = useState(0);
+  const [editSeconds, setEditSeconds] = useState(0);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    artist: "",
+    album: "",
+    duration: 0,
+  });
 
   // Close dialog and reset form after successful upload
   useEffect(() => {
@@ -69,6 +81,34 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
         setSeconds(totalSeconds % 60);
         setFormData(prev => ({ ...prev, duration: totalSeconds }));
       });
+    }
+  };
+
+  const handleEditClick = (song: Song) => {
+    setEditingSong(song);
+    setEditFormData({
+      title: song.title,
+      artist: song.artist,
+      album: song.album || "",
+      duration: song.duration,
+    });
+    setEditMinutes(Math.floor(song.duration / 60));
+    setEditSeconds(song.duration % 60);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingSong) {
+      const totalSeconds = editMinutes * 60 + editSeconds;
+      onUpdateSong(editingSong.id, {
+        title: editFormData.title,
+        artist: editFormData.artist,
+        album: editFormData.album,
+        duration: totalSeconds,
+      });
+      setEditDialogOpen(false);
+      setEditingSong(null);
     }
   };
 
@@ -215,6 +255,93 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Edit Song Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Song</DialogTitle>
+              <DialogDescription>
+                Update the song details (audio file cannot be changed)
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Song Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Stand Up"
+                  required
+                  data-testid="input-edit-song-title"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-artist">Artist</Label>
+                <Input
+                  id="edit-artist"
+                  value={editFormData.artist}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, artist: e.target.value }))}
+                  placeholder="Eddie Sing & The 31 Days"
+                  required
+                  data-testid="input-edit-song-artist"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-album">Album (optional)</Label>
+                <Input
+                  id="edit-album"
+                  value={editFormData.album}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, album: e.target.value }))}
+                  placeholder="The 31 Days Album"
+                  data-testid="input-edit-song-album"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Duration</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit-minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                    <Input
+                      id="edit-minutes"
+                      type="number"
+                      min="0"
+                      value={editMinutes || ""}
+                      onChange={(e) => setEditMinutes(parseInt(e.target.value) || 0)}
+                      placeholder="3"
+                      required
+                      data-testid="input-edit-song-minutes"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-seconds" className="text-xs text-muted-foreground">Seconds</Label>
+                    <Input
+                      id="edit-seconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={editSeconds || ""}
+                      onChange={(e) => setEditSeconds(Math.min(59, parseInt(e.target.value) || 0))}
+                      placeholder="45"
+                      required
+                      data-testid="input-edit-song-seconds"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" data-testid="button-submit-edit-song">
+                <Pencil className="w-4 h-4 mr-2" />
+                Update Song
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {songs.length === 0 ? (
@@ -251,14 +378,24 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = 
                     {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeleteSong(song.id)}
-                      data-testid={`button-delete-song-${song.id}`}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(song)}
+                        data-testid={`button-edit-song-${song.id}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDeleteSong(song.id)}
+                        data-testid={`button-delete-song-${song.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
