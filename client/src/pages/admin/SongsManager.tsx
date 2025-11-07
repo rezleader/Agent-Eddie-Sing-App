@@ -5,16 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Music2, Plus, Trash2, Upload } from "lucide-react";
+import { Music2, Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
   onCreateSong: (data: { title: string; artist: string; album?: string; duration: number; audioFile: File }) => void;
   onDeleteSong: (songId: string) => void;
+  isUploading?: boolean;
 }
 
-export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManagerProps) {
+export function SongsManager({ songs, onCreateSong, onDeleteSong, isUploading = false }: SongsManagerProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -173,9 +174,18 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
                 )}
               </div>
 
-              <Button type="submit" className="w-full" data-testid="button-submit-song">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Song
+              <Button type="submit" className="w-full" disabled={isUploading} data-testid="button-submit-song">
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Song
+                  </>
+                )}
               </Button>
             </form>
           </DialogContent>
