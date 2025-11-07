@@ -73,11 +73,15 @@ export class ACRCloudUploadService {
 
       const url = `${this.baseUrl}/api/buckets/${this.bucketId}/files`;
       
+      // Debug log the request
+      console.log('[ACRCloud Upload] Request URL:', url);
+      console.log('[ACRCloud Upload] Authorization header:', `Bearer ${this.bearerToken?.substring(0, 20)}...`);
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Authorization': `Bearer ${this.bearerToken}`,
+          'Authorization': this.bearerToken, // Use token as-is (might already include "Bearer")
           ...form.getHeaders(),
         },
         body: form,
@@ -89,7 +93,9 @@ export class ACRCloudUploadService {
         console.log(`[ACRCloud Upload] ✅ Fingerprint uploaded successfully: ${result.data.acrid}`);
         return result.data.acrid;
       } else {
-        console.error('[ACRCloud Upload] Fingerprint upload failed:', result.error?.message || 'Unknown error');
+        console.error('[ACRCloud Upload] Fingerprint upload failed:');
+        console.error('  Status:', response.status, response.statusText);
+        console.error('  Response:', JSON.stringify(result, null, 2));
         return null;
       }
     } catch (error) {
