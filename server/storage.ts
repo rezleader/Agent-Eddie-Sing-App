@@ -1,5 +1,7 @@
-import { type Song, type InsertSong, type Challenge, type InsertChallenge, type UserSession, type InsertUserSession } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type Song, type InsertSong, type Challenge, type InsertChallenge, type UserSession, type InsertUserSession, songs, challenges, userSessions } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { neon } from "@neondatabase/serverless";
 
 export interface IStorage {
   // Songs
@@ -18,136 +20,138 @@ export interface IStorage {
   
   // User Sessions
   getUserSession(sessionToken: string): Promise<UserSession | undefined>;
+  getAllUserSessions(): Promise<UserSession[]>;
   createUserSession(session: InsertUserSession): Promise<UserSession>;
   updateUserSessionPoints(sessionToken: string, points: number): Promise<UserSession | undefined>;
   addCompletedChallenge(sessionToken: string, challengeId: string): Promise<UserSession | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private songs: Map<string, Song>;
-  private challenges: Map<string, Challenge>;
-  private userSessions: Map<string, UserSession>;
+export class PostgresStorage implements IStorage {
+  private db;
 
   constructor() {
-    this.songs = new Map();
-    this.challenges = new Map();
-    this.userSessions = new Map();
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error("DATABASE_URL environment variable is not set");
+    }
+    const sql = neon(databaseUrl);
+    this.db = drizzle(sql);
   }
 
   // Songs
   async getSongs(): Promise<Song[]> {
-    return Array.from(this.songs.values());
+    return await this.db.select().from(songs);
   }
 
   async getSong(id: string): Promise<Song | undefined> {
-    return this.songs.get(id);
+    const result = await this.db.select().from(songs).where(eq(songs.id, id));
+    return result[0];
   }
 
   async createSong(insertSong: InsertSong): Promise<Song> {
-    const id = randomUUID();
-    const song: Song = {
-      id,
-      ...insertSong,
-      audioFingerprint: null,
-      createdAt: new Date(),
-    };
-    this.songs.set(id, song);
-    return song;
+    const result = await this.db
+      .insert(songs)
+      .values(insertSong)
+      .returning();
+    return result[0];
   }
 
   async deleteSong(id: string): Promise<void> {
-    this.songs.delete(id);
-    // Also delete associated challenges
-    const challengesToDelete = Array.from(this.challenges.values())
-      .filter(c => c.songId === id);
-    challengesToDelete.forEach(c => this.challenges.delete(c.id));
+    await this.db.delete(songs).where(eq(songs.id, id));
   }
 
   // Challenges
   async getChallenges(): Promise<Challenge[]> {
-    return Array.from(this.challenges.values());
+    return await this.db.select().from(challenges);
   }
 
   async getChallenge(id: string): Promise<Challenge | undefined> {
-    return this.challenges.get(id);
+    const result = await this.db.select().from(challenges).where(eq(challenges.id, id));
+    return result[0];
   }
 
   async getChallengesBySong(songId: string): Promise<Challenge[]> {
-    return Array.from(this.challenges.values()).filter(
-      (challenge) => challenge.songId === songId
-    );
+    return await this.db
+      .select()
+      .from(challenges)
+      .where(eq(challenges.songId, songId));
   }
 
   async getChallengesBySegment(songId: string, segment: number): Promise<Challenge[]> {
-    return Array.from(this.challenges.values()).filter(
-      (challenge) => challenge.songId === songId && challenge.segment === segment
-    );
+    return await this.db
+      .select()
+      .from(challenges)
+      .where(sql`${challenges.songId} = ${songId} AND ${challenges.segment} = ${segment}`);
   }
 
   async createChallenge(insertChallenge: InsertChallenge): Promise<Challenge> {
-    const id = randomUUID();
-    const challenge: Challenge = {
-      id,
-      ...insertChallenge,
-      songId: insertChallenge.songId || null,
-      createdAt: new Date(),
-    };
-    this.challenges.set(id, challenge);
-    return challenge;
+    const result = await this.db
+      .insert(challenges)
+      .values(insertChallenge)
+      .returning();
+    return result[0];
   }
 
   async deleteChallenge(id: string): Promise<void> {
-    this.challenges.delete(id);
+    await this.db.delete(challenges).where(eq(challenges.id, id));
   }
 
   // User Sessions
   async getUserSession(sessionToken: string): Promise<UserSession | undefined> {
-    return Array.from(this.userSessions.values()).find(
-      (session) => session.sessionToken === sessionToken
-    );
+    const result = await this.db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.sessionToken, sessionToken));
+    return result[0];
+  }
+
+  async getAllUserSessions(): Promise<UserSession[]> {
+    return await this.db.select().from(userSessions);
   }
 
   async createUserSession(insertSession: InsertUserSession): Promise<UserSession> {
-    const id = randomUUID();
-    const session: UserSession = {
-      id,
-      ...insertSession,
-      totalPoints: 0,
-      completedChallenges: [],
-      createdAt: new Date(),
-      lastActive: new Date(),
-    };
-    this.userSessions.set(id, session);
-    return session;
+    const result = await this.db
+      .insert(userSessions)
+      .values(insertSession)
+      .returning();
+    return result[0];
   }
 
   async updateUserSessionPoints(sessionToken: string, points: number): Promise<UserSession | undefined> {
-    const session = await this.getUserSession(sessionToken);
-    if (session) {
-      session.totalPoints += points;
-      session.lastActive = new Date();
-      this.userSessions.set(session.id, session);
-      return session;
-    }
-    return undefined;
+    const result = await this.db
+      .update(userSessions)
+      .set({
+        totalPoints: sql`${userSessions.totalPoints} + ${points}`,
+        lastActive: new Date(),
+      })
+      .where(eq(userSessions.sessionToken, sessionToken))
+      .returning();
+    return result[0];
   }
 
   async addCompletedChallenge(sessionToken: string, challengeId: string): Promise<UserSession | undefined> {
     const session = await this.getUserSession(sessionToken);
-    if (session) {
-      const completed = Array.isArray(session.completedChallenges) 
-        ? session.completedChallenges as string[]
-        : [];
-      
-      if (!completed.includes(challengeId)) {
-        session.completedChallenges = [...completed, challengeId];
-        session.lastActive = new Date();
-        this.userSessions.set(session.id, session);
-      }
+    if (!session) return undefined;
+
+    const completed = Array.isArray(session.completedChallenges) 
+      ? session.completedChallenges as string[]
+      : [];
+
+    if (completed.includes(challengeId)) {
       return session;
     }
-    return undefined;
+
+    const result = await this.db
+      .update(userSessions)
+      .set({
+        completedChallenges: [...completed, challengeId],
+        lastActive: new Date(),
+      })
+      .where(eq(userSessions.sessionToken, sessionToken))
+      .returning();
+    
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new PostgresStorage();

@@ -45,7 +45,8 @@ function UserRoutes() {
   useEffect(() => {
     if (!sessionToken) {
       createSession.mutate(undefined, {
-        onSuccess: (newSession) => {
+        onSuccess: async (response) => {
+          const newSession = await response.json();
           setSessionToken(newSession.sessionToken);
           localStorage.setItem("sessionToken", newSession.sessionToken);
         },
