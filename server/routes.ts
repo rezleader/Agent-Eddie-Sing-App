@@ -9,6 +9,7 @@ import { insertSongSchema, insertChallengeSchema, type InsertSong, type InsertCh
 import { randomUUID } from "crypto";
 import { acrCloudService } from "./acrcloud-service";
 import { acrCloudUploadService } from "./acrcloud-upload";
+import { ObjectStorageService } from "./objectStorage";
 import { readFile } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
@@ -96,8 +97,13 @@ async function convertToPCMWav(inputPath: string): Promise<Buffer> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Note: Audio files are served by Vite from client/public/songs as /songs/*
-  // No need for separate express.static middleware
+  const objectStorageService = new ObjectStorageService();
+
+  // Serve audio files from Object Storage
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    await objectStorageService.downloadObject(filePath, res);
+  });
 
   // Songs endpoints
   app.get("/api/songs", async (_req, res) => {
@@ -130,13 +136,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Auto-detect duration from audio file
       const duration = await getAudioDuration(req.file.path);
 
+      // Upload to Object Storage
+      console.log(`[Song Upload] Uploading "${req.body.title}" to Object Storage...`);
+      const objectPath = await objectStorageService.uploadToPublic(
+        req.file.path,
+        `songs/${req.file.filename}`,
+        req.file.mimetype
+      );
+      console.log(`[Song Upload] ✅ Uploaded to: ${objectPath}`);
+
       const songData: InsertSong = {
         title: req.body.title,
         artist: req.body.artist || "Eddie Sing & The 31 Days",
         album: req.body.album || null,
         spotifyLink: req.body.spotifyLink || null,
         duration: duration,
-        audioPath: `/songs/${req.file.filename}`,
+        audioPath: objectPath,
         albumArt: req.body.albumArt || null,
       };
 
