@@ -1,5 +1,5 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Music2, FileText, LogOut } from "lucide-react";
+import { LayoutDashboard, Music2, FileText, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +18,11 @@ const menuItems = [
     title: "Challenges",
     url: "/admin/challenges",
     icon: FileText,
+  },
+  {
+    title: "Settings",
+    url: "/admin/settings",
+    icon: SettingsIcon,
   },
 ];
 
