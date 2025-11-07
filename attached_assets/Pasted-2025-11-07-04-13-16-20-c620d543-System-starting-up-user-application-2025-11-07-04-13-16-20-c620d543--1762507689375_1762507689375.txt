@@ -1,0 +1,173 @@
+2025-11-07 04:13:16.20
+c620d543
+System
+starting up user application
+2025-11-07 04:13:16.20
+c620d543
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-11-07 04:13:16.21
+c620d543
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-11-07 04:13:17.79
+c620d543
+User
+> rest-express@1.0.0 start
+2025-11-07 04:13:17.79
+c620d543
+User
+> NODE_ENV=production node dist/index.js
+2025-11-07 04:13:18.77
+c620d543
+User
+[ACRCloud] Service initialized successfully
+2025-11-07 04:13:18.85
+c620d543
+User
+9:13:18 AM [express] serving on port 5000
+2025-11-07 04:14:05.22
+c620d543
+User
+9:14:05 AM [express] GET /api/admin/stats 304 in 796ms :: {"totalSongs":0,"totalChallenges":0,"total…
+2025-11-07 04:14:06.65
+c620d543
+User
+9:14:06 AM [express] GET /api/challenges 304 in 2169ms :: []
+2025-11-07 04:14:06.70
+c620d543
+User
+9:14:06 AM [express] GET /api/songs 304 in 2223ms :: []
+2025-11-07 04:14:24.05
+c620d543
+User
+9:14:24 AM [express] GET /api/songs 304 in 147ms :: []
+2025-11-07 04:14:26.06
+c620d543
+User
+9:14:26 AM [express] GET /api/challenges 304 in 2156ms :: []
+2025-11-07 04:14:26.15
+c620d543
+User
+9:14:26 AM [express] GET /api/admin/stats 304 in 2255ms :: {"totalSongs":0,"totalChallenges":0,"tota…
+2025-11-07 04:14:32.83
+0339cfac
+System
+system: received signal terminated
+2025-11-07 04:14:41.73
+c620d543
+User
+9:14:41 AM [express] GET /api/songs 200 in 144ms :: []
+2025-11-07 04:19:00.54
+957b2b4a
+System
+starting up user application
+2025-11-07 04:19:00.54
+957b2b4a
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-11-07 04:19:00.54
+957b2b4a
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-11-07 04:19:01.72
+957b2b4a
+User
+> rest-express@1.0.0 start
+2025-11-07 04:19:01.72
+957b2b4a
+User
+> NODE_ENV=production node dist/index.js
+2025-11-07 04:19:02.69
+957b2b4a
+User
+[ACRCloud] Service initialized successfully
+2025-11-07 04:19:02.76
+957b2b4a
+User
+9:19:02 AM [express] serving on port 5000
+2025-11-07 04:19:17.21
+957b2b4a
+System
+starting up user application
+2025-11-07 04:19:17.21
+957b2b4a
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-11-07 04:19:17.21
+957b2b4a
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-11-07 04:19:18.25
+957b2b4a
+User
+> rest-express@1.0.0 start
+2025-11-07 04:19:18.25
+957b2b4a
+User
+> NODE_ENV=production node dist/index.js
+2025-11-07 04:19:19.00
+957b2b4a
+User
+[ACRCloud] Service initialized successfully
+2025-11-07 04:19:19.07
+957b2b4a
+User
+9:19:19 AM [express] serving on port 5000
+2025-11-07 04:20:09.72
+c620d543
+System
+system: received signal terminated
+2025-11-07 04:20:14.64
+957b2b4a
+User
+9:20:14 AM [express] GET /api/songs 200 in 2528ms :: []
+2025-11-07 04:20:18.32
+957b2b4a
+User
+9:20:18 AM [express] GET /api/songs 200 in 50ms :: []
+2025-11-07 04:20:40.90
+957b2b4a
+User
+9:20:40 AM [express] GET /api/health 200 in 4ms
+2025-11-07 04:25:19.40
+1d6e5d18
+System
+starting up user application
+2025-11-07 04:25:19.40
+1d6e5d18
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-11-07 04:25:19.40
+1d6e5d18
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-11-07 04:25:20.57
+1d6e5d18
+User
+> rest-express@1.0.0 start
+2025-11-07 04:25:20.57
+1d6e5d18
+User
+> NODE_ENV=production node dist/index.js
+2025-11-07 04:25:21.45
+1d6e5d18
+User
+[ACRCloud] Service initialized successfully
+2025-11-07 04:25:21.52
+1d6e5d18
+User
+9:25:21 AM [express] serving on port 5000
+2025-11-07 04:26:25.56
+957b2b4a
+System
+system: received signal terminated
+
+2025-11-07 04:26:27.22
+957b2b4a
+System
+system: received signal terminated
+2025-11-07 04:26:34.63
+1d6e5d18
+User
+9:26:34 AM [express] GET /api/songs 200 in 2591ms :: []
