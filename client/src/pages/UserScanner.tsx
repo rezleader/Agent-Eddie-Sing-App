@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Music, Loader2, StopCircle, Trophy, Shield } from "lucide-react";
+import { Mic, Music, Loader2, StopCircle, Trophy, Shield, BookOpen } from "lucide-react";
 import { PointsDisplay } from "@/components/PointsDisplay";
 
 interface UserScannerProps {
@@ -9,10 +9,11 @@ interface UserScannerProps {
   totalPoints: number;
   isRecognizing?: boolean;
   onViewLeaderboard?: () => void;
+  onViewResources?: () => void;
   onAdminLogin?: () => void;
 }
 
-export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false, onViewLeaderboard, onAdminLogin }: UserScannerProps) {
+export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false, onViewLeaderboard, onViewResources, onAdminLogin }: UserScannerProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -95,6 +96,17 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
               >
                 <Shield className="w-4 h-4 mr-2" />
                 Admin
+              </Button>
+            )}
+            {onViewResources && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onViewResources}
+                data-testid="button-view-resources"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Resources
               </Button>
             )}
             {onViewLeaderboard && (
