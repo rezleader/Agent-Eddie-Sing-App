@@ -10,7 +10,7 @@ import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
-  onCreateSong: (data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number; audioFile: File }) => void;
+  onCreateSong: (data: { title: string; artist: string; audioFile: File }) => void;
   onUpdateSong: (songId: string, data: { title: string; artist: string; album?: string; spotifyLink?: string; duration: number }) => void;
   onDeleteSong: (songId: string) => void;
   isUploading?: boolean;
@@ -23,12 +23,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
   const [formData, setFormData] = useState({
     title: "",
     artist: "Eddie Sing & The 31 Days",
-    album: "",
-    spotifyLink: "",
-    duration: 0,
   });
-  const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(0);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [wasUploading, setWasUploading] = useState(false);
   
@@ -45,9 +40,7 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
   // Close dialog and reset form after successful upload
   useEffect(() => {
     if (wasUploading && !isUploading) {
-      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", spotifyLink: "", duration: 0 });
-      setMinutes(0);
-      setSeconds(0);
+      setFormData({ title: "", artist: "Eddie Sing & The 31 Days" });
       setAudioFile(null);
       setDialogOpen(false);
       setWasUploading(false);
@@ -58,13 +51,9 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const totalSeconds = minutes * 60 + seconds;
-    if (audioFile && formData.title && formData.artist && totalSeconds > 0) {
+    if (audioFile && formData.title && formData.artist) {
       onCreateSong({
         ...formData,
-        duration: totalSeconds,
-        album: formData.album || undefined,
-        spotifyLink: formData.spotifyLink || undefined,
         audioFile,
       });
       // Don't close dialog or reset form here - let useEffect handle it after upload completes
@@ -75,15 +64,6 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
     const file = e.target.files?.[0];
     if (file) {
       setAudioFile(file);
-      
-      // Try to get duration from audio file
-      const audio = new Audio(URL.createObjectURL(file));
-      audio.addEventListener('loadedmetadata', () => {
-        const totalSeconds = Math.floor(audio.duration);
-        setMinutes(Math.floor(totalSeconds / 60));
-        setSeconds(totalSeconds % 60);
-        setFormData(prev => ({ ...prev, duration: totalSeconds }));
-      });
     }
   };
 
@@ -180,61 +160,6 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="album">Album (optional)</Label>
-                <Input
-                  id="album"
-                  value={formData.album}
-                  onChange={(e) => setFormData(prev => ({ ...prev, album: e.target.value }))}
-                  placeholder="The 31 Days Album"
-                  data-testid="input-song-album"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="spotifyLink">Spotify Link (optional)</Label>
-                <Input
-                  id="spotifyLink"
-                  value={formData.spotifyLink}
-                  onChange={(e) => setFormData(prev => ({ ...prev, spotifyLink: e.target.value }))}
-                  placeholder="https://open.spotify.com/track/..."
-                  data-testid="input-song-spotify-link"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="minutes" className="text-xs text-muted-foreground">Minutes</Label>
-                    <Input
-                      id="minutes"
-                      type="number"
-                      min="0"
-                      value={minutes || ""}
-                      onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
-                      placeholder="3"
-                      required
-                      data-testid="input-song-minutes"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="seconds" className="text-xs text-muted-foreground">Seconds</Label>
-                    <Input
-                      id="seconds"
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={seconds || ""}
-                      onChange={(e) => setSeconds(Math.min(59, parseInt(e.target.value) || 0))}
-                      placeholder="45"
-                      required
-                      data-testid="input-song-seconds"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="audio">Audio File</Label>
                 <div className="flex items-center gap-2">
                   <Input
@@ -251,6 +176,9 @@ export function SongsManager({ songs, onCreateSong, onUpdateSong, onDeleteSong, 
                     Selected: {audioFile.name}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Duration will be automatically detected from the audio file
+                </p>
               </div>
 
               <Button type="submit" className="w-full" disabled={isUploading} data-testid="button-submit-song">

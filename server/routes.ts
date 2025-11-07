@@ -8,6 +8,7 @@ import { mkdir } from "fs/promises";
 import { insertSongSchema, insertChallengeSchema, type InsertSong, type InsertChallenge } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { acrCloudService } from "./acrcloud-service";
+import { acrCloudUploadService } from "./acrcloud-upload";
 import { readFile } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
@@ -40,6 +41,30 @@ const upload = multer({
     }
   }
 });
+
+// Get audio duration using ffprobe
+async function getAudioDuration(filePath: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) {
+        console.error('[Audio Duration] ffprobe error:', err.message);
+        console.error('[Audio Duration] Make sure ffmpeg/ffprobe is installed on the system');
+        // Provide fallback duration of 180 seconds (3 minutes) if detection fails
+        console.warn('[Audio Duration] Using fallback duration: 180 seconds');
+        resolve(180);
+      } else {
+        const duration = Math.round(metadata.format.duration || 0);
+        if (duration === 0) {
+          console.warn('[Audio Duration] Could not detect duration, using fallback: 180 seconds');
+          resolve(180);
+        } else {
+          console.log(`[Audio Duration] Detected: ${duration} seconds`);
+          resolve(duration);
+        }
+      }
+    });
+  });
+}
 
 // Convert WebM/audio to PCM WAV for better ACRCloud recognition
 async function convertToPCMWav(inputPath: string): Promise<Buffer> {
@@ -105,18 +130,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Audio file is required" });
       }
 
+      // Auto-detect duration from audio file
+      const duration = await getAudioDuration(req.file.path);
+
       const songData: InsertSong = {
         title: req.body.title,
         artist: req.body.artist || "Eddie Sing & The 31 Days",
         album: req.body.album || null,
         spotifyLink: req.body.spotifyLink || null,
-        duration: parseInt(req.body.duration),
+        duration: duration,
         audioPath: `/uploads/${req.file.filename}`,
         albumArt: req.body.albumArt || null,
       };
 
       const validated = insertSongSchema.parse(songData);
       const song = await storage.createSong(validated);
+      
+      // Also upload to ACRCloud if configured
+      if (acrCloudUploadService.isReady()) {
+        console.log(`[Song Upload] Uploading "${validated.title}" to ACRCloud...`);
+        // Conditionally include album to avoid TypeScript error with optional params
+        const acrId = validated.album
+          ? await acrCloudUploadService.uploadAudioFile(
+              req.file.path,
+              validated.title,
+              validated.artist,
+              validated.album
+            )
+          : await acrCloudUploadService.uploadAudioFile(
+              req.file.path,
+              validated.title,
+              validated.artist
+            );
+        if (acrId) {
+          console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);
+        } else {
+          console.warn(`[Song Upload] ⚠️ ACRCloud upload failed for "${validated.title}"`);
+        }
+      }
+      
       res.status(201).json(song);
     } catch (error) {
       console.error("Error creating song:", error);
