@@ -73,16 +73,21 @@ Preferred communication style: Simple, everyday language.
 
 **Business Logic:**
 - **ACRCloud music recognition** - Custom audio fingerprinting for Eddie Sing's 11-song catalog
-  - Identifies songs from user-recorded audio clips
+  - Identifies songs from user-recorded audio clips with 100% confidence
   - Detects which 60-second segment (1-4) user is listening to based on play offset
-  - Fallback to mock data if ACRCloud not configured
+  - Supports both commercial music database and custom bucket responses
+  - Parses artist/album metadata from both string and object formats
   - Requires ACRCLOUD_ACCESS_KEY, ACRCLOUD_ACCESS_SECRET, ACRCLOUD_HOST environment variables
+  - Project 87689 bound to bucket 28354 containing all 11 fingerprints
 - **ACRCloud auto-upload service** - Automatic bucket upload during song creation
-  - Uploads songs to ACRCloud bucket (ID: 28342) via Console API
+  - Uploads songs to ACRCloud bucket (ID: 28354) via Console API
   - Triggered automatically when admin uploads songs via admin panel
   - Uses ACRCLOUD_BUCKET_ID and ACRCLOUD_BEARER_TOKEN environment variables
+  - Generates fingerprints using ACRCloud extraction tool binary
+  - Implements idempotent uploads via custom_file_id (prevents duplicates)
   - Returns acrid for tracking uploaded songs
   - Graceful fallback when not configured (logs warning)
+  - Console API uses Bearer token authentication with api-v2.acrcloud.com
 - **Server-side audio duration detection** - ffprobe-based auto-detection
   - Extracts duration from uploaded audio files using fluent-ffmpeg
   - 180-second fallback if ffprobe unavailable or detection fails
