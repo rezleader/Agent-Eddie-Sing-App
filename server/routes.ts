@@ -149,19 +149,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also upload to ACRCloud if configured
       if (acrCloudUploadService.isReady()) {
         console.log(`[Song Upload] Uploading "${validated.title}" to ACRCloud...`);
-        // Conditionally include album to avoid TypeScript error with optional params
-        const acrId = validated.album
-          ? await acrCloudUploadService.uploadAudioFile(
-              req.file.path,
-              validated.title,
-              validated.artist,
-              validated.album
-            )
-          : await acrCloudUploadService.uploadAudioFile(
-              req.file.path,
-              validated.title,
-              validated.artist
-            );
+        // Coerce string | null to string | undefined for optional parameter
+        const album = validated.album ?? undefined;
+        const acrId = await acrCloudUploadService.uploadAudioFile(
+          req.file.path,
+          validated.title,
+          validated.artist,
+          album
+        );
         if (acrId) {
           console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);
         } else {
