@@ -73,15 +73,11 @@ export class ACRCloudUploadService {
 
       const url = `${this.baseUrl}/api/buckets/${this.bucketId}/files`;
       
-      // Debug log the request
-      console.log('[ACRCloud Upload] Request URL:', url);
-      console.log('[ACRCloud Upload] Authorization header:', `${this.bearerToken?.substring(0, 30)}...`);
-      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Authorization': this.bearerToken!, // Non-null assertion - already checked in isConfigured
+          'Authorization': `Bearer ${this.bearerToken}`, // Add "Bearer " prefix to token
           ...form.getHeaders(),
         },
         body: form,
