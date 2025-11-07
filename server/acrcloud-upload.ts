@@ -40,7 +40,7 @@ export class ACRCloudUploadService {
    * Upload audio file as fingerprint to ACRCloud bucket
    * This generates a robust fingerprint that works with compressed audio (like SoundCloud)
    */
-  async uploadAudioFile(filePath: string, title: string, artist: string, album?: string): Promise<string | null> {
+  async uploadAudioFile(filePath: string, title: string, artist: string, album?: string | null): Promise<string | null> {
     if (!this.isConfigured) {
       console.warn('[ACRCloud Upload] Service not configured, cannot upload');
       return null;

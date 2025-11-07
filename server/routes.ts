@@ -144,21 +144,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const validated = insertSongSchema.parse(songData);
-      const song = await storage.createSong(validated);
+      let song = await storage.createSong(validated);
       
       // Also upload to ACRCloud if configured
       if (acrCloudUploadService.isReady()) {
         console.log(`[Song Upload] Uploading "${validated.title}" to ACRCloud...`);
-        // Coerce string | null to string | undefined for optional parameter
-        const album = validated.album ?? undefined;
         const acrId = await acrCloudUploadService.uploadAudioFile(
           req.file.path,
           validated.title,
           validated.artist,
-          album
+          validated.album ?? undefined
         );
         if (acrId) {
           console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);
+          // Update song with fingerprint ID
+          const updatedSong = await storage.updateSong(song.id, { audioFingerprint: acrId });
+          if (updatedSong) {
+            song = updatedSong;
+            console.log(`[Song Upload] ✅ Fingerprint ID saved to database`);
+          }
         } else {
           console.warn(`[Song Upload] ⚠️ ACRCloud upload failed for "${validated.title}"`);
         }
