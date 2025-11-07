@@ -9,8 +9,9 @@ interface ACRCloudConfig {
 
 interface ACRCloudMusic {
   title: string;
-  artists: Array<{ name: string }>;
-  album?: { name: string };
+  artist?: string;
+  artists?: Array<{ name: string }>;
+  album?: { name: string } | string;
   play_offset_ms: number;
   score: number;
   duration_ms?: number;
@@ -68,7 +69,6 @@ export class ACRCloudService {
     try {
       console.log('[ACRCloud] Starting audio recognition...');
       console.log('[ACRCloud] Audio buffer size:', audioBuffer.length, 'bytes');
-      console.log('[ACRCloud] Project 87689 configured to search bucket 28342...');
       
       const response: ACRCloudResponse = await this.client.identify(audioBuffer);
       
@@ -101,8 +101,8 @@ export class ACRCloudService {
       
       const result: RecognitionResult = {
         title: source.title,
-        artist: source.artists?.map((a: any) => a.name).join(', ') || 'Unknown',
-        album: source.album?.name,
+        artist: source.artist || source.artists?.map((a: any) => a.name).join(', ') || 'Unknown',
+        album: typeof source.album === 'string' ? source.album : source.album?.name,
         playOffsetMs: source.play_offset_ms || 0,
         confidence: source.score / 100, // Convert 0-100 to 0-1
         durationMs: source.duration_ms,
