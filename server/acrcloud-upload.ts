@@ -75,13 +75,13 @@ export class ACRCloudUploadService {
       
       // Debug log the request
       console.log('[ACRCloud Upload] Request URL:', url);
-      console.log('[ACRCloud Upload] Authorization header:', `Bearer ${this.bearerToken?.substring(0, 20)}...`);
+      console.log('[ACRCloud Upload] Authorization header:', `${this.bearerToken?.substring(0, 30)}...`);
       
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Authorization': this.bearerToken, // Use token as-is (might already include "Bearer")
+          'Authorization': this.bearerToken!, // Non-null assertion - already checked in isConfigured
           ...form.getHeaders(),
         },
         body: form,
