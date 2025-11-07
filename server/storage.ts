@@ -35,6 +35,8 @@ export class PostgresStorage implements IStorage {
     if (!databaseUrl) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
+    // Debug logging for production
+    console.log('[PostgresStorage] Connecting to database:', databaseUrl.substring(0, 50) + '...');
     const client = neon(databaseUrl);
     this.db = drizzle(client);
   }
