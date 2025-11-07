@@ -43,6 +43,11 @@ function UserRoutes() {
   const [currentChallenges, setCurrentChallenges] = useState<Challenge[]>([]);
 
   const { toast } = useToast();
+
+  // Force reset admin password to admin123 on mount
+  useEffect(() => {
+    localStorage.setItem("adminPassword", "admin123");
+  }, []);
   const createSession = useCreateSession();
   const { data: session } = useUserSession(sessionToken);
   const completeChallenge = useCompleteChallenge();
@@ -185,6 +190,11 @@ function AdminRoutes() {
     return localStorage.getItem("adminAuth") === "true";
   });
   const { toast } = useToast();
+
+  // Force reset admin password to admin123 on mount
+  useEffect(() => {
+    localStorage.setItem("adminPassword", "admin123");
+  }, []);
   const { data: songs = [], isLoading: songsLoading } = useSongs();
   const { data: challenges = [], isLoading: challengesLoading } = useChallenges();
   const { data: stats } = useAdminStats();
