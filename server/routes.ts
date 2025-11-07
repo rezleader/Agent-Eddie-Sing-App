@@ -262,10 +262,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const songs = await storage.getSongs();
       const challenges = await storage.getChallenges();
+      const allSessions = await storage.getAllUserSessions();
       
       // Calculate total points distributed (sum of all completed challenges across all sessions)
-      const allSessions = Array.from((storage as any).userSessions.values());
-      const totalPoints = allSessions.reduce((sum: number, session: any) => sum + (session.totalPoints || 0), 0);
+      const totalPoints = allSessions.reduce((sum: number, session) => sum + (session.totalPoints || 0), 0);
       
       res.json({
         totalSongs: songs.length,
