@@ -6,11 +6,12 @@ import { fingerprintService } from './fingerprint-service';
 interface ACRCloudUploadResponse {
   success?: boolean;
   data?: {
-    acrid?: string;
+    acr_id?: string;  // ACRCloud uses "acr_id" not "acrid"
+    acrid?: string;   // Keep for backwards compatibility
     audio_id?: string;
     title?: string;
   };
-  error?: {
+  error?: string | {
     code?: number;
     message?: string;
   };
@@ -85,9 +86,12 @@ export class ACRCloudUploadService {
 
       const result = await response.json() as ACRCloudUploadResponse;
 
-      if (response.ok && result.data?.acrid) {
-        console.log(`[ACRCloud Upload] ✅ Fingerprint uploaded successfully: ${result.data.acrid}`);
-        return result.data.acrid;
+      // ACRCloud returns 201 Created on success, and the field is "acr_id" not "acrid"
+      const acrid = result.data?.acr_id || result.data?.acrid;
+      
+      if (response.ok && acrid) {
+        console.log(`[ACRCloud Upload] ✅ Fingerprint uploaded successfully: ${acrid}`);
+        return acrid;
       } else {
         console.error('[ACRCloud Upload] Fingerprint upload failed:');
         console.error('  Status:', response.status, response.statusText);
