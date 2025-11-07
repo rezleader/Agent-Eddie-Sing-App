@@ -153,9 +153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const acrId = await acrCloudUploadService.uploadAudioFile(
           req.file.path,
           validated.title,
-          validated.artist,
+          validated.artist || "Eddie Sing & The 31 Days",
           song.id,
-          validated.album
+          validated.album || undefined
         );
         if (acrId) {
           console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);
