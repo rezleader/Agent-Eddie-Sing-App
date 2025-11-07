@@ -153,7 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.file.path,
           validated.title,
           validated.artist,
-          validated.album ?? undefined
+          song.id,
+          validated.album
         );
         if (acrId) {
           console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);

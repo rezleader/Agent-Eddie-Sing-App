@@ -91,7 +91,8 @@ async function refingerprintAllSongs() {
         audioFilePath,
         song.title,
         song.artist,
-        song.album || undefined
+        song.id,
+        song.album ?? null
       );
 
       if (acrid) {
