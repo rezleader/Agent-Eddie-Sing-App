@@ -22,9 +22,37 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request high-quality audio for better music recognition
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,  // Disable processing that degrades music
+          noiseSuppression: false,  // Keep original audio quality
+          autoGainControl: false,   // Prevent volume normalization
+          sampleRate: 48000,        // Higher sample rate for better quality
+          channelCount: 1           // Mono is fine for recognition
+        }
+      });
       
-      const mediaRecorder = new MediaRecorder(stream);
+      // Use WAV codec if available for best quality, otherwise use high-quality WebM
+      let options: MediaRecorderOptions = {};
+      const mimeTypes = [
+        'audio/wav',
+        'audio/webm;codecs=opus',
+        'audio/webm'
+      ];
+      
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          options = { 
+            mimeType,
+            audioBitsPerSecond: 256000  // High bitrate for quality
+          };
+          console.log('[Recording] Using MIME type:', mimeType);
+          break;
+        }
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -35,7 +63,8 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        console.log('[Recording] Created blob:', audioBlob.size, 'bytes, type:', mediaRecorder.mimeType);
         stream.getTracks().forEach(track => track.stop());
         onSongDetected(audioBlob);
         
