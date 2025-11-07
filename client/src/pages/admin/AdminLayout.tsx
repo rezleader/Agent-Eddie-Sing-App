@@ -1,6 +1,7 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Music2, FileText } from "lucide-react";
+import { LayoutDashboard, Music2, FileText, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
@@ -27,6 +28,11 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [location] = useLocation();
   
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    window.location.href = "/";
+  };
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -58,6 +64,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     );
                   })}
                 </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup className="mt-auto">
+              <SidebarGroupContent>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={handleLogout}
+                  data-testid="button-logout"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
