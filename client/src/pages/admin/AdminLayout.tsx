@@ -1,6 +1,6 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Music2, FileText, Settings as SettingsIcon, LogOut, Scan } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
@@ -65,10 +65,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild data-active={isActive}>
-                          <Link href={item.url}>
+                          <a href={item.url}>
                             <Icon className="w-4 h-4" />
                             <span>{item.title}</span>
-                          </Link>
+                          </a>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
