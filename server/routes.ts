@@ -75,7 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const songData: InsertSong = {
         title: req.body.title,
-        artist: req.body.artist,
+        artist: req.body.artist || "Eddie Sing & The 31 Days",
+        album: req.body.album || null,
         duration: parseInt(req.body.duration),
         audioPath: `/uploads/${req.file.filename}`,
         albumArt: req.body.albumArt || null,

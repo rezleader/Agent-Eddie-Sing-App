@@ -10,7 +10,7 @@ import { type Song } from "@shared/schema";
 
 interface SongsManagerProps {
   songs: Song[];
-  onCreateSong: (data: { title: string; artist: string; duration: number; audioFile: File }) => void;
+  onCreateSong: (data: { title: string; artist: string; album?: string; duration: number; audioFile: File }) => void;
   onDeleteSong: (songId: string) => void;
 }
 
@@ -18,7 +18,8 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    artist: "",
+    artist: "Eddie Sing & The 31 Days",
+    album: "",
     duration: 0,
   });
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -28,9 +29,10 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
     if (audioFile && formData.title && formData.artist && formData.duration > 0) {
       onCreateSong({
         ...formData,
+        album: formData.album || undefined,
         audioFile,
       });
-      setFormData({ title: "", artist: "", duration: 0 });
+      setFormData({ title: "", artist: "Eddie Sing & The 31 Days", album: "", duration: 0 });
       setAudioFile(null);
       setDialogOpen(false);
     }
@@ -96,6 +98,17 @@ export function SongsManager({ songs, onCreateSong, onDeleteSong }: SongsManager
                   placeholder="Eddie Sing & The 31 Days"
                   required
                   data-testid="input-song-artist"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="album">Album (optional)</Label>
+                <Input
+                  id="album"
+                  value={formData.album}
+                  onChange={(e) => setFormData(prev => ({ ...prev, album: e.target.value }))}
+                  placeholder="The 31 Days Album"
+                  data-testid="input-song-album"
                 />
               </div>
 
