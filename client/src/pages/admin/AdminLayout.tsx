@@ -1,9 +1,14 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Music2, FileText, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { LayoutDashboard, Music2, FileText, Settings as SettingsIcon, LogOut, Scan } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
+  {
+    title: "Scanner",
+    url: "/",
+    icon: Scan,
+  },
   {
     title: "Dashboard",
     url: "/admin",
