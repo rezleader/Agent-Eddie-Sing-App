@@ -105,6 +105,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await objectStorageService.downloadObject(filePath, res);
   });
 
+  // Diagnostic endpoint for object storage
+  app.get("/api/debug/storage-config", async (_req, res) => {
+    try {
+      const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "NOT_SET";
+      const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || "NOT_SET";
+      
+      res.json({
+        environment: isProduction ? "production" : "development",
+        PUBLIC_OBJECT_SEARCH_PATHS: publicPaths,
+        DEFAULT_OBJECT_STORAGE_BUCKET_ID: bucketId,
+        configured: publicPaths !== "NOT_SET",
+      });
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   // Songs endpoints
   app.get("/api/songs", async (_req, res) => {
     try {
