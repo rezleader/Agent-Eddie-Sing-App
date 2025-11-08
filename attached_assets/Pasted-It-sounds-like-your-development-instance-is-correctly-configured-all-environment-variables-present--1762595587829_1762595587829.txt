@@ -1,0 +1,25 @@
+It sounds like your development instance is correctly configured (all environment variables present, ACRCloud credentials valid, object storage reachable), whereas the live deployment is missing one or more of those pieces. When you see a 500 error on upload in production but not in development, the usual culprits are:
+
+
+Missing or mis‑named environment variables – In Replit, each secret must be added for the specific deployment. A variable available in a development repl is not automatically injected into the “Deployments” environment. Check that the production deployment has ACRCLOUD_BEARER_TOKEN, ACRCLOUD_BUCKET_ID, and any object‑storage credentials (S3 access key, secret, region, bucket) defined. In the server/objectStorage.ts file the service likely reads those variables; if one is undefined, upload will throw.
+
+
+Expired ACRCloud token – If your Bearer token has expired, the SDK will return an error when you call the fingerprint API. You can verify this in ACRCloud’s console by checking the token’s expiration date and generating a new one if necessary (as you already did in the previous step). Add the new token to production secrets.
+
+
+Request timeouts – The production deployment may have a shorter default request timeout than your dev server. Large audio files could exceed the limit. You can mitigate this by making the fingerprint upload call non‑blocking (as your bot suggested), or by increasing the timeout for that route.
+
+
+Because you can’t see the production logs yet, the quickest low‑risk fix is to make the fingerprint upload asynchronous. In server/routes.ts around line 157 (your upload endpoint), replace the await acrCloudUploadService.uploadAudioFile(...) call with a fire‑and‑forget pattern so the client gets a successful response even if the background fingerprinting eventually fails:
+// pseudo‑code inside your upload handler
+if (acrCloudUploadService.isReady()) {
+  acrCloudUploadService
+    .uploadAudioFile(filePath, trackInfo)
+    .catch((err) => {
+      console.error('Background ACRCloud upload failed:', err);
+    });
+}
+// continue storing the song in the DB and respond 200 OK
+
+After you deploy that change, test uploading in production again. If uploads start succeeding (and songs remain listed when you switch tabs), you know the blocking call was the issue. If you still get 500s, the only way to diagnose further is to retrieve production logs. Replit’s deployment service has a “View logs” button; that will show stack traces for failed requests. Look for any “undefined environment variable” errors or ACRCloud API errors. Once you know which variable or API call is failing, you can add the missing secret to production or refresh the token.
+In short, double‑check that all secrets from your dev repl are present in the deployment, refresh your ACRCloud Bearer token, and consider making the fingerprint upload non‑blocking. Those steps usually resolve the “works in dev, fails in prod” symptom you’re seeing.Relevant tabsAgent Eddie Sing - Replitreplit.com

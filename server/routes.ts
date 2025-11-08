@@ -184,31 +184,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const validated = insertSongSchema.parse(songData);
-      let song = await storage.createSong(validated);
+      const song = await storage.createSong(validated);
       
-      // Also upload to ACRCloud if configured
+      // Upload to ACRCloud in background (non-blocking)
+      // This ensures upload succeeds even if fingerprinting fails/times out
       if (acrCloudUploadService.isReady()) {
-        console.log(`[Song Upload] Uploading "${validated.title}" to ACRCloud...`);
-        const acrId = await acrCloudUploadService.uploadAudioFile(
+        console.log(`[Song Upload] Starting background ACRCloud upload for "${validated.title}"...`);
+        acrCloudUploadService.uploadAudioFile(
           req.file.path,
           validated.title,
           validated.artist || "Eddie Sing & The 31 Days",
           song.id,
           validated.album || undefined
-        );
-        if (acrId) {
-          console.log(`[Song Upload] ✅ ACRCloud upload successful: ${acrId}`);
-          // Update song with fingerprint ID
-          const updatedSong = await storage.updateSong(song.id, { audioFingerprint: acrId });
-          if (updatedSong) {
-            song = updatedSong;
-            console.log(`[Song Upload] ✅ Fingerprint ID saved to database`);
+        ).then((acrId) => {
+          if (acrId) {
+            console.log(`[Song Upload] ✅ Background ACRCloud upload successful: ${acrId}`);
+            // Update song with fingerprint ID in background
+            storage.updateSong(song.id, { audioFingerprint: acrId })
+              .then(() => console.log(`[Song Upload] ✅ Fingerprint ID saved to database`))
+              .catch((err) => console.error(`[Song Upload] ⚠️ Failed to save fingerprint ID:`, err));
+          } else {
+            console.warn(`[Song Upload] ⚠️ Background ACRCloud upload returned no ID for "${validated.title}"`);
           }
-        } else {
-          console.warn(`[Song Upload] ⚠️ ACRCloud upload failed for "${validated.title}"`);
-        }
+        }).catch((err) => {
+          console.error(`[Song Upload] ❌ Background ACRCloud upload failed for "${validated.title}":`, err);
+        });
       }
       
+      // Respond immediately with success (don't wait for ACRCloud)
       res.status(201).json(song);
     } catch (error) {
       console.error("Error creating song:", error);
