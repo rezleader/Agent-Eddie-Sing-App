@@ -152,10 +152,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/songs", upload.single('audioFile'), async (req, res) => {
+    let tempFilePath: string | undefined;
+    
     try {
       if (!req.file) {
         return res.status(400).json({ error: "Audio file is required" });
       }
+
+      tempFilePath = req.file.path;
 
       // Auto-detect duration from audio file
       const duration = await getAudioDuration(req.file.path);
@@ -168,17 +172,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.file.mimetype
       );
       console.log(`[Song Upload] ✅ Uploaded to: ${objectPath}`);
-      
-      // Clean up temp file in production (production uses /tmp which needs cleanup)
-      if (isProduction) {
-        try {
-          const { unlink } = await import('fs/promises');
-          await unlink(req.file.path);
-          console.log(`[Song Upload] 🗑️  Cleaned up temp file: ${req.file.path}`);
-        } catch (cleanupError) {
-          console.warn(`[Song Upload] ⚠️  Could not delete temp file:`, cleanupError);
-        }
-      }
 
       const songData: InsertSong = {
         title: req.body.title,
@@ -224,6 +217,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to create song", 
         details: errorMessage 
       });
+    } finally {
+      // Clean up temp file in production (always runs, even on error)
+      if (isProduction && tempFilePath) {
+        try {
+          const { unlink } = await import('fs/promises');
+          await unlink(tempFilePath);
+          console.log(`[Song Upload] 🗑️  Cleaned up temp file: ${tempFilePath}`);
+        } catch (cleanupError) {
+          console.warn(`[Song Upload] ⚠️  Could not delete temp file:`, cleanupError);
+        }
+      }
     }
   });
 
