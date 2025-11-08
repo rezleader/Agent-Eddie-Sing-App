@@ -15,8 +15,14 @@ import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 
 // Configure multer for audio file uploads
-// Use client/public/songs for permanent storage (survives deployments!)
-const uploadDir = path.join(process.cwd(), "client", "public", "songs");
+// Production: use /tmp (writable) since client/public is read-only
+// Development: use client/public/songs for convenience
+const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+const uploadDir = isProduction 
+  ? "/tmp/uploads"
+  : path.join(process.cwd(), "client", "public", "songs");
+
+console.log(`[Upload] Using upload directory: ${uploadDir} (${isProduction ? 'production' : 'development'})`);
 
 // Ensure upload directory exists
 mkdir(uploadDir, { recursive: true }).catch(console.error);
@@ -162,6 +168,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.file.mimetype
       );
       console.log(`[Song Upload] ✅ Uploaded to: ${objectPath}`);
+      
+      // Clean up temp file in production (production uses /tmp which needs cleanup)
+      if (isProduction) {
+        try {
+          const { unlink } = await import('fs/promises');
+          await unlink(req.file.path);
+          console.log(`[Song Upload] 🗑️  Cleaned up temp file: ${req.file.path}`);
+        } catch (cleanupError) {
+          console.warn(`[Song Upload] ⚠️  Could not delete temp file:`, cleanupError);
+        }
+      }
 
       const songData: InsertSong = {
         title: req.body.title,
