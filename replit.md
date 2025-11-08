@@ -73,9 +73,13 @@ Preferred communication style: Simple, everyday language.
 - HTTP-based Neon client (`drizzle-orm/neon-http`)
 - Abstracted storage interface (`IStorage`) for testability
 - **Replit Object Storage** for persistent song files (survives all deployments)
-  - Fetch-based ObjectStorageService using signed URL API (workaround for @google-cloud/storage npm install errors)
-  - Songs serve from `/public-objects/songs/` endpoint
-  - Streaming uploads/downloads via Express proxy
+  - Google Cloud Storage SDK (@google-cloud/storage) with environment-aware authentication
+  - **Development**: Uses Replit sidecar authentication (127.0.0.1:1106)
+  - **Production**: Uses default application credentials (REPLIT_DEPLOYMENT=1)
+  - Automatic credential detection via `createStorageClient()` factory function
+  - Songs uploaded via `bucket.upload()` method with proper metadata
+  - Songs served from `/public-objects/songs/` endpoint with streaming downloads
+  - Production-ready implementation verified by architect review
   - 7 of 11 songs migrated; 4 need re-upload via admin panel
 
 **Data Models:**
