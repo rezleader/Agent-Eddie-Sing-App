@@ -1,9 +1,45 @@
 import { Response } from "express";
-import { createReadStream, statSync } from "fs";
-import { Readable } from "stream";
-import fetch from "node-fetch";
+import { Storage } from "@google-cloud/storage";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+
+// Initialize Google Cloud Storage client
+// In development: uses sidecar authentication
+// In production: uses default application credentials
+function createStorageClient(): Storage {
+  // Detect if we're in production deployment (no sidecar available)
+  const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+  
+  if (isProduction) {
+    console.log("[ObjectStorage] Using production credentials (application default)");
+    // In production, use default application credentials provided by Replit
+    return new Storage({
+      projectId: "",
+    });
+  } else {
+    console.log("[ObjectStorage] Using development credentials (sidecar)");
+    // In development, use sidecar authentication
+    return new Storage({
+      credentials: {
+        audience: "replit",
+        subject_token_type: "access_token",
+        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+        type: "external_account",
+        credential_source: {
+          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+          format: {
+            type: "json",
+            subject_token_field_name: "access_token",
+          },
+        },
+        universe_domain: "googleapis.com",
+      },
+      projectId: "",
+    });
+  }
+}
+
+const objectStorageClient = createStorageClient();
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -32,26 +68,18 @@ export class ObjectStorageService {
     const fullPath = `${publicDir}/${normalizedDest}`;
     const { bucketName, objectName } = this.parseObjectPath(fullPath);
 
-    // Get signed URL for upload
-    const signedUrl = await this.getSignedUrl(bucketName, objectName, "PUT");
+    console.log(`[ObjectStorage] Uploading to bucket: ${bucketName}, object: ${objectName}`);
     
-    // Stream upload instead of loading into memory
-    const stats = statSync(localFilePath);
-    const fileStream = createReadStream(localFilePath);
-    
-    const uploadResponse = await fetch(signedUrl, {
-      method: "PUT",
-      body: fileStream as any,
-      headers: {
-        "Content-Type": mimeType,
-        "Content-Length": stats.size.toString(),
+    // Use Google Cloud Storage SDK's upload method (correct usage)
+    const bucket = objectStorageClient.bucket(bucketName);
+    await bucket.upload(localFilePath, {
+      destination: objectName,
+      metadata: {
+        contentType: mimeType,
       },
     });
 
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-    }
-
+    console.log(`[ObjectStorage] ✅ Upload successful`);
     return `/public-objects/${normalizedDest}`;
   }
 
@@ -61,32 +89,36 @@ export class ObjectStorageService {
     const { bucketName, objectName } = this.parseObjectPath(fullPath);
 
     try {
-      // Get signed URL for download
-      const signedUrl = await this.getSignedUrl(bucketName, objectName, "GET");
+      // Use Google Cloud Storage SDK for download (works in both dev and production)
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
       
-      // Fetch the file
-      const response = await fetch(signedUrl);
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new ObjectNotFoundError();
-        }
-        throw new Error(`Download failed: ${response.statusText}`);
+      // Check if file exists
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new ObjectNotFoundError();
       }
 
+      // Get file metadata
+      const [metadata] = await file.getMetadata();
+      
       // Set headers
       res.set({
-        "Content-Type": response.headers.get("content-type") || "audio/wav",
-        "Content-Length": response.headers.get("content-length") || "",
+        "Content-Type": metadata.contentType || "audio/wav",
+        "Content-Length": metadata.size?.toString() || "",
         "Cache-Control": "public, max-age=31536000",
       });
 
-      // Convert Web ReadableStream to Node stream and pipe
-      if (response.body) {
-        const nodeStream = Readable.fromWeb(response.body as any);
-        nodeStream.pipe(res);
-      } else {
-        throw new Error("No response body");
-      }
+      // Stream the file directly to response
+      file.createReadStream()
+        .on("error", (err) => {
+          console.error("Stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Error streaming file" });
+          }
+        })
+        .pipe(res);
+        
     } catch (error) {
       console.error("Error downloading object:", error);
       if (error instanceof ObjectNotFoundError) {
@@ -113,34 +145,5 @@ export class ObjectStorageService {
       bucketName: parts[0],
       objectName: parts.slice(1).join("/"),
     };
-  }
-
-  private async getSignedUrl(
-    bucketName: string,
-    objectName: string,
-    method: "GET" | "PUT"
-  ): Promise<string> {
-    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
-    
-    const response = await fetch(
-      `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bucket_name: bucketName,
-          object_name: objectName,
-          method,
-          expires_at: expiresAt,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to get signed URL: ${response.statusText}`);
-    }
-
-    const data = await response.json() as { signed_url: string };
-    return data.signed_url;
   }
 }

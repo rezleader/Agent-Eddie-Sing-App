@@ -184,7 +184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(song);
     } catch (error) {
       console.error("Error creating song:", error);
-      res.status(400).json({ error: "Invalid song data" });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        error: "Failed to create song", 
+        details: errorMessage 
+      });
     }
   });
 
