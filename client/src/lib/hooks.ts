@@ -19,7 +19,11 @@ export function useSong(id: string | null) {
 export function useCreateSong() {
   return useMutation({
     mutationFn: async (data: { title: string; artist: string; album?: string; audioFile: File }) => {
+      console.log('[Upload] Starting 3-step upload process...');
+      console.log('[Upload] File:', data.audioFile.name, 'Size:', data.audioFile.size, 'Type:', data.audioFile.type);
+      
       // Step 1: Request signed URL from backend
+      console.log('[Upload] Step 1: Requesting signed URL...');
       const requestResponse = await fetch("/api/songs/request-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,13 +35,16 @@ export function useCreateSong() {
       });
 
       if (!requestResponse.ok) {
+        console.error('[Upload] Step 1 FAILED:', requestResponse.status, requestResponse.statusText);
         const error = await requestResponse.json();
         throw new Error(error.error || "Failed to request upload URL");
       }
 
       const { signedUrl, publicPath, fileName } = await requestResponse.json();
+      console.log('[Upload] Step 1 SUCCESS - Got signed URL');
 
       // Step 2: Upload file directly to Google Cloud Storage
+      console.log('[Upload] Step 2: Uploading to Google Cloud Storage...');
       const uploadResponse = await fetch(signedUrl, {
         method: "PUT",
         headers: {
@@ -47,10 +54,14 @@ export function useCreateSong() {
       });
 
       if (!uploadResponse.ok) {
+        console.error('[Upload] Step 2 FAILED:', uploadResponse.status, uploadResponse.statusText);
         throw new Error("Failed to upload file to storage");
       }
 
+      console.log('[Upload] Step 2 SUCCESS - File uploaded to GCS');
+
       // Step 3: Confirm upload and create song record
+      console.log('[Upload] Step 3: Confirming upload with backend...');
       const confirmResponse = await fetch("/api/songs/confirm-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,9 +76,11 @@ export function useCreateSong() {
       });
 
       if (!confirmResponse.ok) {
+        console.error('[Upload] Step 3 FAILED:', confirmResponse.status, confirmResponse.statusText);
         throw new Error("Failed to confirm upload");
       }
 
+      console.log('[Upload] Step 3 SUCCESS - Song created in database');
       return confirmResponse.json();
     },
     onSuccess: () => {
