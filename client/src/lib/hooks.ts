@@ -19,25 +19,56 @@ export function useSong(id: string | null) {
 export function useCreateSong() {
   return useMutation({
     mutationFn: async (data: { title: string; artist: string; album?: string; audioFile: File }) => {
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("artist", data.artist);
-      if (data.album) {
-        formData.append("album", data.album);
-      }
-      formData.append("audioFile", data.audioFile);
-      // Duration is auto-detected on the server
-
-      const response = await fetch("/api/songs", {
+      // Step 1: Request signed URL from backend
+      const requestResponse = await fetch("/api/songs/request-upload", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: data.audioFile.name,
+          contentType: data.audioFile.type,
+          fileSize: data.audioFile.size,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create song");
+      if (!requestResponse.ok) {
+        const error = await requestResponse.json();
+        throw new Error(error.error || "Failed to request upload URL");
       }
 
-      return response.json();
+      const { signedUrl, publicPath, fileName } = await requestResponse.json();
+
+      // Step 2: Upload file directly to Google Cloud Storage
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": data.audioFile.type,
+        },
+        body: data.audioFile,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file to storage");
+      }
+
+      // Step 3: Confirm upload and create song record
+      const confirmResponse = await fetch("/api/songs/confirm-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title,
+          artist: data.artist,
+          album: data.album,
+          audioPath: publicPath,
+          fileName: fileName,
+          contentType: data.audioFile.type,
+        }),
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error("Failed to confirm upload");
+      }
+
+      return confirmResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/songs"] });

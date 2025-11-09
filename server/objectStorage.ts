@@ -61,6 +61,34 @@ export class ObjectStorageService {
     return paths[0]; // Use first public path
   }
 
+  async generateSignedUploadUrl(destinationPath: string, contentType: string): Promise<{ signedUrl: string; publicPath: string }> {
+    const publicDir = this.getPublicObjectDir();
+    // Normalize destination path (remove leading slash, prevent traversal)
+    const normalizedDest = destinationPath.replace(/^\/+/, "").replace(/\.\./g, "");
+    const fullPath = `${publicDir}/${normalizedDest}`;
+    const { bucketName, objectName } = this.parseObjectPath(fullPath);
+
+    console.log(`[ObjectStorage] Generating signed URL for bucket: ${bucketName}, object: ${objectName}`);
+    
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    
+    // Generate signed URL for PUT upload (valid for 15 minutes)
+    // Note: File size is validated in the request-upload endpoint
+    const [signedUrl] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'write',
+      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+      contentType: contentType,
+    });
+
+    console.log(`[ObjectStorage] ✅ Signed URL generated`);
+    return {
+      signedUrl,
+      publicPath: `/public-objects/${normalizedDest}`
+    };
+  }
+
   async uploadToPublic(localFilePath: string, destinationPath: string, mimeType: string = "audio/wav"): Promise<string> {
     const publicDir = this.getPublicObjectDir();
     // Normalize destination path (remove leading slash, prevent traversal)
