@@ -4,39 +4,30 @@ import { Storage } from "@google-cloud/storage";
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
 // Initialize Google Cloud Storage client
-// In development: uses sidecar authentication
-// In production: uses default application credentials
+// Both development and production use sidecar authentication
 function createStorageClient(): Storage {
-  // Detect if we're in production deployment (no sidecar available)
   const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
   
-  if (isProduction) {
-    console.log("[ObjectStorage] Using production credentials (application default)");
-    // In production, use default application credentials provided by Replit
-    return new Storage({
-      projectId: "",
-    });
-  } else {
-    console.log("[ObjectStorage] Using development credentials (sidecar)");
-    // In development, use sidecar authentication
-    return new Storage({
-      credentials: {
-        audience: "replit",
-        subject_token_type: "access_token",
-        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-        type: "external_account",
-        credential_source: {
-          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-          format: {
-            type: "json",
-            subject_token_field_name: "access_token",
-          },
+  console.log(`[ObjectStorage] Using sidecar authentication (${isProduction ? 'production' : 'development'})`);
+  
+  // Both environments use sidecar authentication
+  return new Storage({
+    credentials: {
+      audience: "replit",
+      subject_token_type: "access_token",
+      token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+      type: "external_account",
+      credential_source: {
+        url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+        format: {
+          type: "json",
+          subject_token_field_name: "access_token",
         },
-        universe_domain: "googleapis.com",
       },
-      projectId: "",
-    });
-  }
+      universe_domain: "googleapis.com",
+    },
+    projectId: "",
+  });
 }
 
 const objectStorageClient = createStorageClient();
