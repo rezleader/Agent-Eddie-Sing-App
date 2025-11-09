@@ -151,6 +151,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW: Request signed URL for direct upload (bypasses Google proxy limit)
+  app.post("/api/songs/request-upload", async (req, res) => {
+    try {
+      const { fileName, contentType, fileSize } = req.body;
+      
+      // Validate inputs
+      if (!fileName || !contentType || fileSize === undefined || fileSize === null) {
+        return res.status(400).json({ error: "fileName, contentType, and fileSize are required" });
+      }
+
+      // Validate file size (100MB limit)
+      const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+      if (fileSize > MAX_FILE_SIZE) {
+        return res.status(400).json({ error: "File size exceeds 100MB limit" });
+      }
+
+      // Validate content type
+      if (!contentType.startsWith('audio/')) {
+        return res.status(400).json({ error: "Only audio files are allowed" });
+      }
+
+      // Generate unique filename
+      const uniqueSuffix = Date.now() + '-' + randomUUID();
+      const extension = path.extname(fileName);
+      const uniqueFileName = uniqueSuffix + extension;
+      const destinationPath = `songs/${uniqueFileName}`;
+
+      // Generate signed URL
+      const { signedUrl, publicPath } = await objectStorageService.generateSignedUploadUrl(
+        destinationPath,
+        contentType
+      );
+
+      res.json({
+        signedUrl,
+        publicPath,
+        fileName: uniqueFileName
+      });
+    } catch (error) {
+      console.error("Error generating signed URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // NEW: Confirm upload and create song record
+  app.post("/api/songs/confirm-upload", async (req, res) => {
+    try {
+      const { title, artist, album, spotifyLink, audioPath, fileName, contentType } = req.body;
+
+      if (!title || !audioPath || !fileName) {
+        return res.status(400).json({ error: "title, audioPath, and fileName are required" });
+      }
+
+      // For direct uploads, we can't get duration from the file since it's already in storage
+      // Use a default duration that can be updated later, or extract from metadata if needed
+      const duration = 180; // Default 3 minutes, can be updated in admin panel
+
+      const songData: InsertSong = {
+        title,
+        artist: artist || "Eddie Sing & The 31 Days",
+        album: album || null,
+        spotifyLink: spotifyLink || null,
+        duration,
+        audioPath,
+        albumArt: null,
+      };
+
+      const validated = insertSongSchema.parse(songData);
+      const song = await storage.createSong(validated);
+
+      // Note: ACRCloud upload will need to be handled differently for direct uploads
+      // since we don't have a local file path. This can be implemented later.
+      console.log(`[Song Upload] Direct upload confirmed: "${validated.title}"`);
+      console.log(`[Song Upload] ⚠️  ACRCloud fingerprinting skipped for direct uploads (implement later if needed)`);
+
+      res.status(201).json(song);
+    } catch (error) {
+      console.error("Error confirming upload:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        error: "Failed to create song", 
+        details: errorMessage 
+      });
+    }
+  });
+
   app.post("/api/songs", upload.single('audioFile'), async (req, res) => {
     let tempFilePath: string | undefined;
     
