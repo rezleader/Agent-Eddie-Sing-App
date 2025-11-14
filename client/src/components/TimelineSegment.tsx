@@ -51,7 +51,9 @@ export function TimelineSegment({
     return segmentColors[segment];
   };
 
-  const isClickDisabled = !hasChallenges || isDisabled;
+  // Allow detected segment to be clicked even if it has no challenges
+  // Other segments are disabled if they have no challenges OR if they're explicitly disabled
+  const isClickDisabled = isDisabled || (!isDetected && !hasChallenges);
 
   return (
     <button
@@ -74,9 +76,14 @@ export function TimelineSegment({
       <div className="text-xs text-muted-foreground">
         {timeRange}
       </div>
-      {isDetected && (
+      {isDetected && hasChallenges && (
         <div className="text-xs font-bold mt-1 text-primary">
           ✓ Scanned
+        </div>
+      )}
+      {isDetected && !hasChallenges && (
+        <div className="text-xs font-bold mt-1 text-primary">
+          ✓ Scanned - No challenges yet
         </div>
       )}
       {!isDetected && hasChallenges && !isDisabled && (
