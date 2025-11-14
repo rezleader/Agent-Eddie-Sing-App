@@ -5,6 +5,8 @@ interface TimelineSegmentProps {
   isActive: boolean;
   hasChallenges: boolean;
   onClick: () => void;
+  isDetected?: boolean;
+  isDisabled?: boolean;
   className?: string;
 }
 
@@ -22,11 +24,20 @@ const activeColors: Record<number, string> = {
   4: "bg-chart-5/40 border-chart-5 ring-2 ring-chart-5",
 };
 
+const detectedColors: Record<number, string> = {
+  1: "bg-chart-1/60 border-chart-1 ring-4 ring-chart-1/50 shadow-lg",
+  2: "bg-chart-2/60 border-chart-2 ring-4 ring-chart-2/50 shadow-lg",
+  3: "bg-chart-4/60 border-chart-4 ring-4 ring-chart-4/50 shadow-lg",
+  4: "bg-chart-5/60 border-chart-5 ring-4 ring-chart-5/50 shadow-lg",
+};
+
 export function TimelineSegment({ 
   segment, 
   isActive, 
   hasChallenges, 
   onClick,
+  isDetected = false,
+  isDisabled = false,
   className = "" 
 }: TimelineSegmentProps) {
   const timeRange = segment === 1 ? "0-60s" : 
@@ -34,15 +45,25 @@ export function TimelineSegment({
                     segment === 3 ? "120-180s" : 
                     "180s+";
 
+  const getColors = () => {
+    if (isDetected) return detectedColors[segment];
+    if (isActive) return activeColors[segment];
+    return segmentColors[segment];
+  };
+
+  const isClickDisabled = !hasChallenges || isDisabled;
+
   return (
     <button
       onClick={onClick}
-      disabled={!hasChallenges}
+      disabled={isClickDisabled}
       className={`
-        flex-1 min-h-24 rounded-xl border-2 transition-all cursor-pointer
+        flex-1 min-h-24 rounded-xl border-2 transition-all
         flex flex-col items-center justify-center gap-2 p-4
-        ${isActive ? activeColors[segment] : segmentColors[segment]}
-        ${!hasChallenges ? "opacity-50 cursor-not-allowed" : "hover-elevate active-elevate-2"}
+        ${getColors()}
+        ${isDisabled ? "opacity-30 cursor-not-allowed grayscale" : ""}
+        ${!hasChallenges && !isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+        ${!isClickDisabled ? "cursor-pointer hover-elevate active-elevate-2" : ""}
         ${className}
       `}
       data-testid={`segment-${segment}`}
@@ -53,9 +74,19 @@ export function TimelineSegment({
       <div className="text-xs text-muted-foreground">
         {timeRange}
       </div>
-      {hasChallenges && (
+      {isDetected && (
+        <div className="text-xs font-bold mt-1 text-primary">
+          ✓ Scanned
+        </div>
+      )}
+      {!isDetected && hasChallenges && !isDisabled && (
         <div className="text-xs font-semibold mt-1">
           Click for challenges
+        </div>
+      )}
+      {isDisabled && (
+        <div className="text-xs mt-1 opacity-50">
+          Not scanned
         </div>
       )}
     </button>

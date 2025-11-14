@@ -15,6 +15,7 @@ import { type Challenge, type Song, type ChallengeCategory, type ChallengeType, 
 interface SongChallengesProps {
   song: Song;
   challenges: Challenge[];
+  detectedSegment: number | null;
   completedChallengeIds: string[];
   totalPoints: number;
   onAcceptChallenge: (challengeId: string) => void;
@@ -23,13 +24,14 @@ interface SongChallengesProps {
 
 export function SongChallenges({ 
   song, 
-  challenges, 
+  challenges,
+  detectedSegment,
   completedChallengeIds, 
   totalPoints,
   onAcceptChallenge,
   onBack 
 }: SongChallengesProps) {
-  const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<number | null>(detectedSegment);
   const [selectedType, setSelectedType] = useState<ChallengeType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -146,11 +148,14 @@ export function SongChallenges({
         </Card>
 
         {/* Timeline */}
-        <Card>
+        <Card className="border-2 border-primary/20">
           <CardHeader>
             <CardTitle className="text-xl">Song Timeline</CardTitle>
             <CardDescription>
-              Click a segment to view its challenges
+              {detectedSegment 
+                ? `You scanned Minute ${detectedSegment} - challenges below are for this segment`
+                : "Select a minute segment to view challenges"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -161,7 +166,13 @@ export function SongChallenges({
                   segment={segment}
                   isActive={selectedSegment === segment}
                   hasChallenges={(challengesBySegment[segment]?.length || 0) > 0}
-                  onClick={() => setSelectedSegment(selectedSegment === segment ? null : segment)}
+                  onClick={() => {
+                    if (!detectedSegment || segment === detectedSegment) {
+                      setSelectedSegment(selectedSegment === segment ? null : segment);
+                    }
+                  }}
+                  isDetected={segment === detectedSegment}
+                  isDisabled={detectedSegment !== null && segment !== detectedSegment}
                 />
               ))}
             </div>
