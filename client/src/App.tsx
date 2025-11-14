@@ -41,6 +41,7 @@ function UserRoutes() {
   });
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [currentChallenges, setCurrentChallenges] = useState<Challenge[]>([]);
+  const [detectedSegment, setDetectedSegment] = useState<number | null>(null);
 
   const { toast } = useToast();
   const createSession = useCreateSession();
@@ -60,9 +61,10 @@ function UserRoutes() {
     }
   }, [sessionToken]);
 
-  const handleSongDetected = (song: Song, challenges: Challenge[]) => {
+  const handleSongDetected = (song: Song, challenges: Challenge[], segment: number) => {
     setCurrentSong(song);
     setCurrentChallenges(challenges);
+    setDetectedSegment(segment);
     setCurrentView("challenges");
   };
 
@@ -88,12 +90,13 @@ function UserRoutes() {
     setCurrentView("scanner");
     setCurrentSong(null);
     setCurrentChallenges([]);
+    setDetectedSegment(null);
   };
 
   const handleRecognize = async (audioBlob: Blob) => {
     try {
       const result = await recognizeSong.mutateAsync(audioBlob);
-      handleSongDetected(result.song, result.challenges);
+      handleSongDetected(result.song, result.challenges, result.segment);
       
       const segmentText = result.segment === 1 ? "first minute" : 
                          result.segment === 2 ? "second minute" : 
@@ -172,6 +175,7 @@ function UserRoutes() {
     <SongChallenges
       song={currentSong}
       challenges={currentChallenges}
+      detectedSegment={detectedSegment}
       completedChallengeIds={(session?.completedChallenges as string[]) || []}
       totalPoints={session?.totalPoints || 0}
       onAcceptChallenge={handleAcceptChallenge}
@@ -408,6 +412,7 @@ function SongChallengesRoute({ params }: { params: { id: string } }) {
     <SongChallenges
       song={song}
       challenges={challenges}
+      detectedSegment={null}
       completedChallengeIds={(session?.completedChallenges as string[]) || []}
       totalPoints={session?.totalPoints || 0}
       onAcceptChallenge={handleAcceptChallenge}
