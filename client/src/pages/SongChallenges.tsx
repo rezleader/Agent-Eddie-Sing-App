@@ -64,6 +64,14 @@ export function SongChallenges({
     return segmentMatch && typeMatch && categoryMatch;
   });
 
+  // Debug logging
+  console.log('[SongChallenges] Total challenges:', challenges.length);
+  console.log('[SongChallenges] Filters:', { selectedSegment, selectedType, selectedCategory });
+  console.log('[SongChallenges] Filtered count:', filteredChallenges.length);
+  if (selectedType && selectedCategory && filteredChallenges.length > 0) {
+    console.log('[SongChallenges] First filtered challenge:', filteredChallenges[0]);
+  }
+
   const handleShare = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
