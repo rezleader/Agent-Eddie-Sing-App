@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { type Challenge } from "@shared/schema";
+import { ExternalLink } from "lucide-react";
 
 interface AnswerInputDialogProps {
   open: boolean;
@@ -48,6 +49,24 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit }: A
               {challenge.description}
             </p>
           </div>
+
+          {challenge.organization && (
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+              <p className="text-sm font-semibold text-foreground">Related Organization:</p>
+              <p className="text-sm text-muted-foreground">{challenge.organization}</p>
+              {challenge.organizationUrl && (
+                <a 
+                  href={challenge.organizationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                  data-testid="link-organization-dialog"
+                >
+                  Learn More <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="answer">Your Answer</Label>
