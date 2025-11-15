@@ -5,7 +5,7 @@ import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok } from "react-icons/si";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { type Challenge, categoryDisplayNames, type ChallengeCategory } from "@shared/schema";
-import albumCover from "@assets/American Split Cover_1763171359272.png";
+import albumCover from "@assets/American Split Cover_1763172339559.png";
 
 interface SocialShareModalProps {
   open: boolean;
@@ -22,7 +22,17 @@ const platformConfig = {
     name: "Facebook",
     icon: SiFacebook,
     color: "bg-[#1877F2] hover:bg-[#0C63D4]",
-    shareUrl: (text: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`,
+    shareUrl: (text: string, imageUrl: string) => {
+      // Facebook Feed Dialog with image
+      const params = new URLSearchParams({
+        app_id: '966242223397117', // Generic Facebook app ID for sharing
+        display: 'popup',
+        link: 'https://agenteddiesing.replit.app',
+        quote: text,
+        picture: imageUrl,
+      });
+      return `https://www.facebook.com/dialog/feed?${params.toString()}`;
+    },
   },
   instagram: {
     name: "Instagram",
@@ -46,8 +56,9 @@ const platformConfig = {
 
 export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist }: SocialShareModalProps) {
   const [copiedText, setCopiedText] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
+  // Get the full URL to the album cover image
+  const albumCoverUrl = new URL(albumCover, window.location.origin).href;
   const shareLink = "https://agenteddiesing.replit.app";
   const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nVisit: https://agenteddiesing.replit.app\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
   
@@ -75,18 +86,8 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
       }
     };
 
-    const handleCopyLink = async () => {
-      try {
-        await navigator.clipboard.writeText(shareLink);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    };
-
     const handleShareFacebook = () => {
-      window.open(platformConfig.facebook.shareUrl!(text), '_blank', 'width=600,height=400');
+      window.open(platformConfig.facebook.shareUrl!(text, albumCoverUrl), '_blank', 'width=600,height=400');
     };
 
     const handleShareInstagram = () => {
@@ -119,35 +120,6 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             />
           </div>
 
-          {/* Shareable Link */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Share This Link:</Label>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                readOnly 
-                value={shareLink}
-                className="flex-1 px-3 py-2 text-sm rounded-md border bg-muted"
-                data-testid="input-share-link"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-                data-testid="button-copy-link"
-              >
-                {copiedLink ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Copy this link to share the ARG game with your post
-            </p>
-          </div>
-
           {/* Preview */}
           <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
             {text}
@@ -177,15 +149,20 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
           <div className="space-y-3">
             <p className="text-sm font-semibold text-muted-foreground">Share to:</p>
             
-            {/* Facebook - Direct share */}
-            <Button
-              onClick={handleShareFacebook}
-              className="w-full bg-[#1877F2] hover:bg-[#0C63D4] text-white gap-2"
-              data-testid="button-share-facebook"
-            >
-              <SiFacebook className="w-5 h-5" />
-              Share on Facebook
-            </Button>
+            {/* Facebook - Direct share with embedded image */}
+            <div className="space-y-2">
+              <Button
+                onClick={handleShareFacebook}
+                className="w-full bg-[#1877F2] hover:bg-[#0C63D4] text-white gap-2"
+                data-testid="button-share-facebook"
+              >
+                <SiFacebook className="w-5 h-5" />
+                Share on Facebook
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Opens Facebook with your post and album cover ready to share
+              </p>
+            </div>
 
             {/* Instagram - Manual share instructions */}
             <div className="space-y-2">
@@ -195,16 +172,15 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
                 data-testid="button-share-instagram"
               >
                 <SiInstagram className="w-5 h-5" />
-                Share on Instagram
+                Copy for Instagram
               </Button>
               <div className="p-3 rounded-lg bg-muted/50 space-y-1">
                 <p className="text-xs font-semibold">How to share on Instagram:</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Save the album cover image above</li>
-                  <li>Copy the post text and link</li>
-                  <li>Open Instagram and create a post/story</li>
+                  <li>Save the album cover image above (long-press or right-click)</li>
+                  <li>Text copied! Open Instagram and create a post/story</li>
                   <li>Upload the album cover image</li>
-                  <li>Paste your text and the link in the caption</li>
+                  <li>Paste your text in the caption</li>
                 </ol>
               </div>
             </div>
