@@ -487,6 +487,11 @@ const ALTERNATIVE_TEMPLATES = {
 async function generateChallenges() {
   console.log("Fetching songs from database...");
   
+  // Clear existing challenges to avoid duplicates
+  console.log("Clearing existing challenges...");
+  await sql`DELETE FROM challenges`;
+  console.log("✓ Existing challenges cleared\n");
+  
   // Get all songs
   const songs = await sql`SELECT id, title FROM songs ORDER BY created_at`;
   
