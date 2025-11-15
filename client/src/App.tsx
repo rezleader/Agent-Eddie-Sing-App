@@ -189,6 +189,7 @@ function UserRoutes() {
       completedChallengeIds={(session?.completedChallenges as string[]) || []}
       totalPoints={session?.totalPoints || 0}
       lockedChallengeType={session?.lockedChallengeType}
+      sessionToken={sessionToken || ""}
       onAcceptChallenge={handleAcceptChallenge}
       onBack={handleBack}
     />

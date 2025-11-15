@@ -2,9 +2,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok } from "react-icons/si";
-import { Copy, Check, ExternalLink } from "lucide-react";
+import { Copy, Check, ExternalLink, Download } from "lucide-react";
 import { useState } from "react";
-import { type Challenge, categoryDisplayNames, type ChallengeCategory } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { type Challenge, type UserMedia, categoryDisplayNames, type ChallengeCategory } from "@shared/schema";
 import albumCover from "@assets/American Split Cover_1763172339559.png";
 
 interface SocialShareModalProps {
@@ -15,6 +16,8 @@ interface SocialShareModalProps {
   userAnswer?: string;
   songTitle?: string;
   songArtist?: string;
+  mediaId?: string;
+  sessionToken?: string;
 }
 
 const platformConfig = {
@@ -48,8 +51,14 @@ const platformConfig = {
   },
 };
 
-export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist }: SocialShareModalProps) {
+export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist, mediaId, sessionToken }: SocialShareModalProps) {
   const [copiedText, setCopiedText] = useState(false);
+
+  // Fetch media if mediaId is provided
+  const { data: media } = useQuery<UserMedia>({
+    queryKey: ['/api/media', mediaId],
+    enabled: !!mediaId && !!sessionToken,
+  });
 
   // Get the full URL to the album cover image
   const albumCoverUrl = new URL(albumCover, window.location.origin).href;
@@ -115,6 +124,50 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               data-testid="img-album-cover"
             />
           </div>
+
+          {/* Captured Media Preview */}
+          {media && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Your Captured {media.mediaType === 'photo' ? 'Photo' : 'Video'}
+              </Label>
+              <div className="rounded-lg border border-border overflow-hidden bg-muted">
+                {media.mediaType === 'photo' ? (
+                  <img 
+                    src={media.filePath}
+                    alt="Captured photo"
+                    className="w-full h-auto max-h-64 object-contain"
+                    data-testid="img-captured-media"
+                  />
+                ) : (
+                  <video 
+                    src={media.filePath}
+                    controls
+                    className="w-full h-auto max-h-64"
+                    data-testid="video-captured-media"
+                  />
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = media.filePath;
+                  link.download = `challenge-${media.mediaType}-${Date.now()}.${media.mediaType === 'photo' ? 'jpg' : 'mp4'}`;
+                  link.click();
+                }}
+                data-testid="button-download-media"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download {media.mediaType === 'photo' ? 'Photo' : 'Video'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Download your {media.mediaType} to share it on social media platforms
+              </p>
+            </div>
+          )}
 
           {/* Preview */}
           <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">

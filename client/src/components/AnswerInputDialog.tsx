@@ -3,33 +3,107 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { type Challenge } from "@shared/schema";
-import { ExternalLink } from "lucide-react";
+import { type Challenge, type UserMedia } from "@shared/schema";
+import { ExternalLink, Camera, Video, Loader2, CheckCircle, X } from "lucide-react";
 import albumCover from "@assets/American Split Cover_1763172339559.png";
+import { useCameraCapture } from "@/hooks/useCameraCapture";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AnswerInputDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   challenge: Challenge | null;
-  onSubmit: (answer: string) => void;
+  onSubmit: (answer: string, mediaId?: string) => void;
   onReject?: () => void;
   songTitle?: string;
+  sessionToken: string;
 }
 
-export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onReject, songTitle }: AnswerInputDialogProps) {
+export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onReject, songTitle, sessionToken }: AnswerInputDialogProps) {
   const [answer, setAnswer] = useState("");
+  const [capturedMedia, setCapturedMedia] = useState<UserMedia | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const { capturePhoto, captureVideo, isCapturing, error: captureError, clearError } = useCameraCapture();
+  const { toast } = useToast();
 
   if (!challenge) return null;
 
+  const uploadMedia = async (file: File, mediaType: 'photo' | 'video'): Promise<UserMedia | null> => {
+    try {
+      setIsUploading(true);
+      
+      const formData = new FormData();
+      formData.append('mediaFile', file);
+      formData.append('sessionToken', sessionToken);
+      formData.append('challengeId', challenge.id);
+      formData.append('mediaType', mediaType);
+
+      const response = await apiRequest<UserMedia>('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {}, // Let browser set Content-Type with boundary
+      });
+
+      toast({
+        title: "Upload successful",
+        description: `Your ${mediaType} has been uploaded successfully.`,
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Media upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: `Failed to upload ${mediaType}. Please try again.`,
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    clearError();
+    const file = await capturePhoto();
+    
+    if (file) {
+      const media = await uploadMedia(file, 'photo');
+      if (media) {
+        setCapturedMedia(media);
+      }
+    }
+  };
+
+  const handleRecordVideo = async () => {
+    clearError();
+    const file = await captureVideo();
+    
+    if (file) {
+      const media = await uploadMedia(file, 'video');
+      if (media) {
+        setCapturedMedia(media);
+      }
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    setCapturedMedia(null);
+  };
+
   const handleSubmit = () => {
     if (answer.trim()) {
-      onSubmit(answer.trim());
-      setAnswer(""); // Reset for next time
+      onSubmit(answer.trim(), capturedMedia?.id);
+      setAnswer("");
+      setCapturedMedia(null);
     }
   };
 
   const handleReject = () => {
     setAnswer("");
+    setCapturedMedia(null);
     onOpenChange(false);
     if (onReject) {
       onReject();
@@ -38,6 +112,7 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
 
   const handleCancel = () => {
     setAnswer("");
+    setCapturedMedia(null);
     onOpenChange(false);
   };
 
@@ -101,6 +176,79 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
               className="min-h-[120px] resize-none"
               data-testid="input-answer"
             />
+
+            {/* Camera Capture Buttons */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Optional: Capture Photo or Video
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTakePhoto}
+                  disabled={isCapturing || isUploading || !!capturedMedia}
+                  className="flex items-center gap-2"
+                  data-testid="button-take-photo"
+                >
+                  {isCapturing || isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                  Take Photo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRecordVideo}
+                  disabled={isCapturing || isUploading || !!capturedMedia}
+                  className="flex items-center gap-2"
+                  data-testid="button-record-video"
+                >
+                  {isCapturing || isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Video className="w-4 h-4" />
+                  )}
+                  Create Video
+                </Button>
+              </div>
+            </div>
+
+            {/* Capture Error Display */}
+            {captureError && (
+              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+                {captureError}
+              </div>
+            )}
+
+            {/* Captured Media Preview */}
+            {capturedMedia && (
+              <div className="p-3 rounded-md bg-primary/5 border border-primary/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-semibold">
+                      {capturedMedia.mediaType === 'photo' ? 'Photo' : 'Video'} captured
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveMedia}
+                    className="h-6 w-6 p-0"
+                    data-testid="button-remove-media"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your {capturedMedia.mediaType} will be included in the social share
+                </p>
+              </div>
+            )}
             
             {/* Yellow buttons below the text box */}
             <div className="flex flex-col gap-2">
