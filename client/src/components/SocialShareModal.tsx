@@ -1,15 +1,17 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok } from "react-icons/si";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { type Challenge, categoryDisplayNames, type ChallengeCategory } from "@shared/schema";
+import albumCover from "@assets/American Split Cover_1763171359272.png";
 
 interface SocialShareModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   challenge: Challenge | null;
   points: number;
+  userAnswer?: string;
 }
 
 const platformConfig = {
@@ -39,12 +41,15 @@ const platformConfig = {
   },
 };
 
-export function SocialShareModal({ open, onOpenChange, challenge, points }: SocialShareModalProps) {
+export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "" }: SocialShareModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!challenge) return null;
 
-  const shareText = `I just completed a challenge in American Split AI ARG!\n\n"${challenge.title}"\n\nCategory: ${categoryDisplayNames[challenge.category as ChallengeCategory]}\nPoints Earned: ${points}\n\n#AmericanSplit #ARG #AgentEddieSing #${categoryDisplayNames[challenge.category as ChallengeCategory].replace(/[^a-zA-Z0-9]/g, '')}`;
+  const answerSection = userAnswer ? `\n\nMy Answer:\n"${userAnswer}"\n` : "";
+  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nVisit: https://agenteddiesing.replit.app\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
+  
+  const shareText = `I just completed a challenge in American Split AI ARG!\n\n"${challenge.title}"${answerSection}\nCategory: ${categoryDisplayNames[challenge.category as ChallengeCategory]}\nPoints Earned: ${points}${endingMessage}`;
 
   const handleCopy = async () => {
     try {
@@ -59,13 +64,9 @@ export function SocialShareModal({ open, onOpenChange, challenge, points }: Soci
   const handleShare = (platform: keyof typeof platformConfig) => {
     const config = platformConfig[platform];
     
-    // Use Web Share API if available (works on mobile)
-    if (navigator.share && (platform === 'instagram' || platform === 'snapchat' || platform === 'tiktok')) {
-      navigator.share({
-        title: 'American Split AI Challenge',
-        text: shareText,
-        url: window.location.href,
-      }).catch(err => console.log('Share cancelled', err));
+    // For Instagram and Snapchat, just copy the text
+    if (platform === 'instagram' || platform === 'snapchat') {
+      handleCopy();
       return;
     }
 
@@ -86,6 +87,16 @@ export function SocialShareModal({ open, onOpenChange, challenge, points }: Soci
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Album Cover */}
+          <div className="flex justify-center">
+            <img 
+              src={albumCover} 
+              alt="American Split AI Album Cover" 
+              className="w-48 h-48 rounded-lg shadow-lg object-cover"
+              data-testid="img-album-cover"
+            />
+          </div>
+
           {/* Preview */}
           <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap" data-testid="text-share-preview">
             {shareText}
@@ -106,29 +117,53 @@ export function SocialShareModal({ open, onOpenChange, challenge, points }: Soci
             ) : (
               <>
                 <Copy className="w-4 h-4 mr-2" />
-                Copy to Clipboard
+                Copy the Post
               </>
             )}
           </Button>
 
           {/* Social platforms */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-muted-foreground">Share directly to:</p>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(platformConfig).map(([key, config]) => {
-                const Icon = config.icon;
-                return (
-                  <Button
-                    key={key}
-                    onClick={() => handleShare(key as keyof typeof platformConfig)}
-                    className={`${config.color} text-white`}
-                    data-testid={`button-share-${key}`}
-                  >
-                    <Icon className="w-5 h-5 mr-2" />
-                    {config.name}
-                  </Button>
-                );
-              })}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-muted-foreground">Share to:</p>
+            
+            {/* Facebook - Direct share */}
+            <Button
+              onClick={() => handleShare('facebook')}
+              className="w-full bg-[#1877F2] hover:bg-[#0C63D4] text-white"
+              data-testid="button-share-facebook"
+            >
+              <SiFacebook className="w-5 h-5 mr-2" />
+              Share on Facebook
+            </Button>
+
+            {/* Instagram - Copy and open */}
+            <div className="space-y-2">
+              <Button
+                onClick={() => handleShare('instagram')}
+                className="w-full bg-gradient-to-tr from-[#FCAF45] via-[#E1306C] to-[#833AB4] hover:opacity-90 text-white"
+                data-testid="button-share-instagram"
+              >
+                <SiInstagram className="w-5 h-5 mr-2" />
+                Copy for Instagram
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Text copied! Open Instagram and paste into your story or post with the album cover image.
+              </p>
+            </div>
+
+            {/* Snapchat - Copy and open */}
+            <div className="space-y-2">
+              <Button
+                onClick={() => handleShare('snapchat')}
+                className="w-full bg-[#FFFC00] text-black hover:bg-[#E6E300]"
+                data-testid="button-share-snapchat"
+              >
+                <SiSnapchat className="w-5 h-5 mr-2" />
+                Copy for Snapchat
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Text copied! Open Snapchat and paste into your story with the album cover image.
+              </p>
             </div>
           </div>
         </div>
