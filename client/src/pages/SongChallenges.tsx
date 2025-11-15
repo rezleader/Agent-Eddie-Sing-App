@@ -18,6 +18,7 @@ interface SongChallengesProps {
   detectedSegment: number | null;
   completedChallengeIds: string[];
   totalPoints: number;
+  lockedChallengeType: string | null | undefined; // Server-provided locked type
   onAcceptChallenge: (challengeId: string) => void;
   onBack: () => void;
 }
@@ -28,6 +29,7 @@ export function SongChallenges({
   detectedSegment,
   completedChallengeIds, 
   totalPoints,
+  lockedChallengeType,
   onAcceptChallenge,
   onBack 
 }: SongChallengesProps) {
@@ -39,7 +41,6 @@ export function SongChallenges({
   const [sharePoints, setSharePoints] = useState(0);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
-  const [lockedType, setLockedType] = useState<ChallengeType | null>(null); // Track completed type for this scan
 
   // Group challenges by segment
   const challengesBySegment = challenges.reduce((acc, challenge) => {
@@ -73,8 +74,6 @@ export function SongChallenges({
       onAcceptChallenge(challengeId);
       setCompletedChallenge(challenge);
       setCompletionModalOpen(true);
-      // Lock to this challenge type for this scan session
-      setLockedType(challenge.type as ChallengeType);
       // Auto-open share modal after accepting
       setShareChallenge(challenge);
       setSharePoints(challenge.points);
@@ -187,8 +186,8 @@ export function SongChallenges({
           <CardHeader>
             <CardTitle className="text-xl">Step 1: Select Challenge Type</CardTitle>
             <CardDescription>
-              {lockedType 
-                ? `You've completed a ${lockedType} challenge. Scan again to try other types.`
+              {lockedChallengeType 
+                ? `You've completed a ${lockedChallengeType} challenge. Scan again to try other types.`
                 : "Choose the type of challenge you want to complete (one type per scan)"
               }
             </CardDescription>
@@ -196,7 +195,7 @@ export function SongChallenges({
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {challengeTypes.map(type => {
-                const isLocked = lockedType !== null && lockedType !== type;
+                const isLocked = lockedChallengeType !== null && lockedChallengeType !== undefined && lockedChallengeType !== type;
                 return (
                   <Button
                     key={type}

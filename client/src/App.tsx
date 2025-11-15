@@ -94,8 +94,17 @@ function UserRoutes() {
   };
 
   const handleRecognize = async (audioBlob: Blob) => {
+    if (!sessionToken) {
+      toast({
+        title: "Session error",
+        description: "No session found. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const result = await recognizeSong.mutateAsync(audioBlob);
+      const result = await recognizeSong.mutateAsync({ audioBlob, sessionToken });
       handleSongDetected(result.song, result.challenges, result.segment);
       
       const segmentText = result.segment === 1 ? "first minute" : 
@@ -178,6 +187,7 @@ function UserRoutes() {
       detectedSegment={detectedSegment}
       completedChallengeIds={(session?.completedChallenges as string[]) || []}
       totalPoints={session?.totalPoints || 0}
+      lockedChallengeType={session?.lockedChallengeType}
       onAcceptChallenge={handleAcceptChallenge}
       onBack={handleBack}
     />
@@ -415,6 +425,7 @@ function SongChallengesRoute({ params }: { params: { id: string } }) {
       detectedSegment={null}
       completedChallengeIds={(session?.completedChallenges as string[]) || []}
       totalPoints={session?.totalPoints || 0}
+      lockedChallengeType={session?.lockedChallengeType}
       onAcceptChallenge={handleAcceptChallenge}
       onBack={() => window.location.href = "/"}
     />

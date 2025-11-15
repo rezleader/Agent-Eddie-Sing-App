@@ -25,6 +25,8 @@ export interface IStorage {
   createUserSession(session: InsertUserSession): Promise<UserSession>;
   updateUserSessionPoints(sessionToken: string, points: number): Promise<UserSession | undefined>;
   addCompletedChallenge(sessionToken: string, challengeId: string): Promise<UserSession | undefined>;
+  updateScanSession(sessionToken: string, songId: string, segment: number): Promise<UserSession | undefined>;
+  lockChallengeType(sessionToken: string, challengeType: string): Promise<UserSession | undefined>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -162,6 +164,42 @@ export class PostgresStorage implements IStorage {
       .where(eq(userSessions.sessionToken, sessionToken))
       .returning();
     
+    return result[0];
+  }
+
+  async updateScanSession(sessionToken: string, songId: string, segment: number): Promise<UserSession | undefined> {
+    // Get current session to check if song/segment changed
+    const currentSession = await this.getUserSession(sessionToken);
+    if (!currentSession) return undefined;
+
+    // Only clear lock if song or segment changed (new scan)
+    const shouldClearLock = 
+      currentSession.currentScanSongId !== songId || 
+      currentSession.currentScanSegment !== segment;
+
+    const result = await this.db
+      .update(userSessions)
+      .set({
+        currentScanSongId: songId,
+        currentScanSegment: segment,
+        lastScanAt: new Date(),
+        lockedChallengeType: shouldClearLock ? null : currentSession.lockedChallengeType, // Only clear on song/segment change
+        lastActive: new Date(),
+      })
+      .where(eq(userSessions.sessionToken, sessionToken))
+      .returning();
+    return result[0];
+  }
+
+  async lockChallengeType(sessionToken: string, challengeType: string): Promise<UserSession | undefined> {
+    const result = await this.db
+      .update(userSessions)
+      .set({
+        lockedChallengeType: challengeType,
+        lastActive: new Date(),
+      })
+      .where(eq(userSessions.sessionToken, sessionToken))
+      .returning();
     return result[0];
   }
 }

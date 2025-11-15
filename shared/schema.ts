@@ -44,6 +44,10 @@ export const userSessions = pgTable("user_sessions", {
   sessionToken: text("session_token").notNull().unique(),
   totalPoints: integer("total_points").default(0).notNull(),
   completedChallenges: jsonb("completed_challenges").default([]).notNull(), // array of challenge IDs
+  currentScanSongId: varchar("current_scan_song_id"), // track current scan session
+  currentScanSegment: integer("current_scan_segment"), // track detected segment
+  lockedChallengeType: text("locked_challenge_type"), // lock to one type per scan
+  lastScanAt: timestamp("last_scan_at"), // timestamp of last scan to detect new scans
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastActive: timestamp("last_active").defaultNow().notNull(),
 });
