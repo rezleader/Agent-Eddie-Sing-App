@@ -48,7 +48,10 @@ Preferred communication style: Simple, everyday language.
 
 **Key Frontend Components:**
 - `UserScanner`: Audio recording interface using Web Audio API with leaderboard access
-- `SongChallenges`: Challenge browsing and filtering by segment/category
+- `SongChallenges`: Challenge browsing and filtering by segment/category with one-type-per-scan restriction
+  - Users can only complete one challenge type (ACTION, SHARE, KNOW, or ALTERNATIVE) per scan session
+  - Once a challenge is accepted, other type buttons are disabled until next scan
+  - No "ALL" filter option - only the four specific challenge types are available
 - `ChallengeCard`: Gamified challenge presentation with point displays
 - `Leaderboard`: Top 100 players ranked by total points with current user highlighting
 - `SocialShareModal`: Multi-platform sharing functionality
@@ -109,6 +112,9 @@ Preferred communication style: Simple, everyday language.
   - 180-second fallback if ffprobe unavailable or detection fails
   - Eliminates manual duration entry in admin panel
 - Challenge completion validation with duplicate prevention
+- **One challenge type per scan restriction** - Users locked to selected type after accepting a challenge
+  - Encourages multiple scans and sustained engagement with the music
+  - Prevents gaming the system by completing all types in one scan
 - Point accumulation system
 - Session management with localStorage persistence
 - Leaderboard ranking system (top 100 players, anonymized player IDs)
@@ -126,6 +132,8 @@ The application uses Drizzle ORM with PostgreSQL (Neon serverless):
   - Categories: "Love & Romance", "Racism", "Sexism", "Homo/Transphobia", "Threat of A.I."
   - Types: "ACTION", "SHARE", "KNOW", "ALTERNATIVE"
   - Segment: 1-4 (60-second intervals)
+  - Total: 4,400 challenges (11 songs × 4 segments × 100 challenges per segment)
+  - Distribution: 20 challenges per type per category per segment (evenly distributed)
 - `user_sessions`: Session state (id, sessionToken, totalPoints, completedChallenges, createdAt, lastActive)
   - completedChallenges stored as JSONB array of challenge IDs
   - Anonymous identification via truncated session IDs
