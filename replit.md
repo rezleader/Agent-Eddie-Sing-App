@@ -8,9 +8,10 @@ The app enables users to:
 - Record audio clips to identify songs
 - Browse challenges organized by song segments (60-second intervals)
 - Complete various challenge types (ACTION, SHARE, KNOW, ALTERNATIVE)
+- **Capture photos and videos** with phone camera during challenge completion
 - Earn points for completing challenges
 - View leaderboard rankings showing top players by points
-- Share achievements on social media platforms
+- Share achievements on social media platforms with uploaded media
 
 ## User Preferences
 
@@ -55,11 +56,16 @@ Preferred communication style: Simple, everyday language.
   - **Challenge rejection system**: Users can reject challenges for reduced points
   - **Skip option**: After 2 rejections, users can skip and just share about the song
 - `ChallengeCard`: Gamified challenge presentation with point displays and organization links
-- `AnswerInputDialog`: Answer input with album cover, organization info, and share/reject options
+- `AnswerInputDialog`: Answer input with album cover, organization info, **photo/video capture buttons**, and share/reject options
+  - **"Take Photo" button**: Opens camera or file picker to capture photos (max 10MB, JPEG/PNG/WebP)
+  - **"Create Video" button**: Opens camera or file picker to record videos (max 100MB, MP4/WebM)
+  - Uses `useCameraCapture` hook with getUserMedia API and fallback to file input
+  - Captured media automatically uploaded to Object Storage and linked to challenge completion
 - `Leaderboard`: Top 100 players ranked by total points with current user highlighting
-- `SocialShareModal`: Multi-platform sharing with album cover and agenteddiesing.replit.app link
-  - Facebook: Direct share
+- `SocialShareModal`: Multi-platform sharing with album cover, uploaded photos/videos, and agenteddiesing.replit.app link
+  - Facebook: Direct share with Open Graph embedded album cover
   - Instagram/Snapchat: Copy text with instructions
+  - **Media preview**: Displays uploaded photos/videos in share modal with download option
   - Includes user's answer and ending message: "Scan the album American Split AI available at AgentEddieSing.com... Skabe din fremtid, Eddie Sing & The 31 Days"
 - Admin interfaces for content management (SongsManager, ChallengesManager)
 
@@ -97,6 +103,10 @@ Preferred communication style: Simple, everyday language.
   - New fields: `organization` (name), `organizationUrl` (link)
   - Organizations matched to challenge categories (NAACP for racism, Trevor Project for LGBTQ+, etc.)
 - User Sessions: Point tracking and completed challenge history (stored in JSONB array)
+- **User Media** (NEW): Photos and videos uploaded by users during challenge completion
+  - Fields: sessionToken, challengeId, mediaType (photo/video), filePath, fileSize, mimeType
+  - Files stored in Replit Object Storage under `user-media/` directory
+  - Linked to challenges and user sessions for social sharing
 
 **Business Logic:**
 - **ACRCloud music recognition** - Custom audio fingerprinting for Eddie Sing's 11-song catalog
@@ -154,10 +164,16 @@ The application uses Drizzle ORM with PostgreSQL (Neon serverless):
 - `user_sessions`: Session state (id, sessionToken, totalPoints, completedChallenges, createdAt, lastActive)
   - completedChallenges stored as JSONB array of challenge IDs
   - Anonymous identification via truncated session IDs
+- **`user_media`** (NEW): User-uploaded photos and videos (id, sessionToken, challengeId, mediaType, filePath, fileSize, mimeType, createdAt)
+  - Stores metadata only; actual files in Object Storage
+  - mediaType: "photo" or "video"
+  - Supported formats: JPEG/PNG/WebP for photos, MP4/WebM for videos
+  - Size limits: 10MB photos, 100MB videos
 
 **Relationships:**
 - Challenges reference songs via foreign key with cascade delete
 - User sessions track completed challenges via JSONB array field
+- User media references challenges via foreign key with cascade delete
 
 **Key Design Decisions:**
 - UUID primary keys for distributed compatibility
