@@ -60,10 +60,10 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
     enabled: !!mediaId && !!sessionToken,
   });
 
-  // Get the full URL to the album cover image
-  const albumCoverUrl = new URL(albumCover, window.location.origin).href;
+  // Get the full URL to the album cover image - MUST be in the text for Facebook to show it
+  const albumCoverUrl = "https://agenteddiesing.replit.app/album-cover.png";
   const shareLink = "https://agenteddiesing.replit.app";
-  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
+  const endingMessage = `\n\n${albumCoverUrl}\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.`;
   
   // If no challenge (song-only share), create simple share text
   if (!challenge && songTitle) {
