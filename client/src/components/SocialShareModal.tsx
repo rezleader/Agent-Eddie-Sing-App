@@ -22,16 +22,9 @@ const platformConfig = {
     name: "Facebook",
     icon: SiFacebook,
     color: "bg-[#1877F2] hover:bg-[#0C63D4]",
-    shareUrl: (text: string, imageUrl: string) => {
-      // Facebook Feed Dialog with image
-      const params = new URLSearchParams({
-        app_id: '966242223397117', // Generic Facebook app ID for sharing
-        display: 'popup',
-        link: 'https://agenteddiesing.replit.app',
-        quote: text,
-        picture: imageUrl,
-      });
-      return `https://www.facebook.com/dialog/feed?${params.toString()}`;
+    shareUrl: (text: string) => {
+      // Facebook sharer - opens Facebook where user can paste text and attach image
+      return `https://www.facebook.com/`;
     },
   },
   instagram: {
@@ -87,7 +80,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
     };
 
     const handleShareFacebook = () => {
-      window.open(platformConfig.facebook.shareUrl!(text, albumCoverUrl), '_blank', 'width=600,height=400');
+      window.open(platformConfig.facebook.shareUrl!(text), '_blank');
     };
 
     const handleShareInstagram = () => {
@@ -122,36 +115,40 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             />
           </div>
 
-          {/* Preview */}
-          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
-            {text}
+          {/* Important instruction */}
+          <div className="bg-yellow-500 text-black p-3 rounded-lg text-center font-semibold">
+            First: Copy this text before sharing
           </div>
 
-          {/* Copy button */}
+          {/* Copy button - Prominent gold styling */}
           <Button
-            variant="outline"
-            className="w-full"
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold text-lg py-6"
             onClick={handleCopyText}
             data-testid="button-copy-text"
           >
             {copiedText ? (
               <>
-                <Check className="w-4 h-4 mr-2" />
-                Post Text Copied!
+                <Check className="w-5 h-5 mr-2" />
+                ✓ Post Text Copied!
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 mr-2" />
+                <Copy className="w-5 h-5 mr-2" />
                 Copy Post Text
               </>
             )}
           </Button>
 
+          {/* Preview */}
+          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
+            {text}
+          </div>
+
           {/* Social platforms */}
           <div className="space-y-3">
             <p className="text-sm font-semibold text-muted-foreground">Share to:</p>
             
-            {/* Facebook - Direct share with embedded image */}
+            {/* Facebook */}
             <div className="space-y-2">
               <Button
                 onClick={handleShareFacebook}
@@ -159,14 +156,22 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
                 data-testid="button-share-facebook"
               >
                 <SiFacebook className="w-5 h-5" />
-                Share on Facebook
+                Open Facebook
               </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Opens Facebook with your post and album cover ready to share
-              </p>
+              <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+                <p className="text-xs font-semibold">How to share on Facebook:</p>
+                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Save the album cover image above (right-click → Save)</li>
+                  <li>Copy the post text using the button above</li>
+                  <li>Click "Open Facebook"</li>
+                  <li>Create a new post</li>
+                  <li>Attach the saved album cover image</li>
+                  <li>Paste your copied text</li>
+                </ol>
+              </div>
             </div>
 
-            {/* Instagram - Open Instagram */}
+            {/* Instagram */}
             <div className="space-y-2">
               <Button
                 onClick={handleShareInstagram}
@@ -179,11 +184,12 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               <div className="p-3 rounded-lg bg-muted/50 space-y-1">
                 <p className="text-xs font-semibold">How to share on Instagram:</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Click "Copy Post Text" above</li>
-                  <li>Save the album cover image (long-press or right-click)</li>
-                  <li>Click "Open Instagram" to go to Instagram</li>
-                  <li>Create a post/story and upload the album cover</li>
-                  <li>Paste your text in the caption</li>
+                  <li>Save the album cover image above (long-press or right-click)</li>
+                  <li>Copy the post text using the button above</li>
+                  <li>Click "Open Instagram"</li>
+                  <li>Create a new post/story</li>
+                  <li>Upload the saved album cover image</li>
+                  <li>Paste your copied text as the caption</li>
                 </ol>
               </div>
             </div>
