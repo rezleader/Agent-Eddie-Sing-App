@@ -23,8 +23,9 @@ const platformConfig = {
     icon: SiFacebook,
     color: "bg-[#1877F2] hover:bg-[#0C63D4]",
     shareUrl: (text: string) => {
-      // Facebook sharer - opens Facebook where user can paste text and attach image
-      return `https://www.facebook.com/`;
+      // Facebook sharer with link - this will show the album cover via Open Graph tags
+      const shareUrl = encodeURIComponent('https://agenteddiesing.replit.app/');
+      return `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
     },
   },
   instagram: {
@@ -156,17 +157,15 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
                 data-testid="button-share-facebook"
               >
                 <SiFacebook className="w-5 h-5" />
-                Open Facebook
+                Share on Facebook
               </Button>
               <div className="p-3 rounded-lg bg-muted/50 space-y-1">
-                <p className="text-xs font-semibold">How to share on Facebook:</p>
+                <p className="text-xs font-semibold">Facebook sharing (with auto-embedded album cover!):</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Save the album cover image above (right-click → Save)</li>
                   <li>Copy the post text using the button above</li>
-                  <li>Click "Open Facebook"</li>
-                  <li>Create a new post</li>
-                  <li>Attach the saved album cover image</li>
-                  <li>Paste your copied text</li>
+                  <li>Click "Share on Facebook" - album cover will appear automatically</li>
+                  <li>Add your copied text to the post</li>
+                  <li>Click Post - the image links back to agenteddiesing.replit.app</li>
                 </ol>
               </div>
             </div>
