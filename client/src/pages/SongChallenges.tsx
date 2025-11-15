@@ -200,17 +200,19 @@ export function SongChallenges({
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {challengeTypes.map(type => {
-                const isLocked = lockedChallengeType !== null && lockedChallengeType !== undefined && lockedChallengeType !== type;
+                const isServerLocked = lockedChallengeType !== null && lockedChallengeType !== undefined && lockedChallengeType !== type;
+                const isSelected = selectedType === type;
+                const isDisabled = (selectedType !== null && selectedType !== type) || isServerLocked;
                 return (
                   <Button
                     key={type}
-                    variant={selectedType === type ? "default" : "outline"}
-                    onClick={() => !isLocked && setSelectedType(type)}
-                    disabled={isLocked}
+                    variant={isSelected ? "default" : "outline"}
+                    onClick={() => !isDisabled && setSelectedType(type)}
+                    disabled={isDisabled}
                     className="h-auto py-4 flex flex-col items-center gap-2"
                     data-testid={`filter-type-${type}`}
                   >
-                    <Badge variant={selectedType === type ? "secondary" : "outline"} className="text-sm font-bold">
+                    <Badge variant={isSelected ? "secondary" : "outline"} className="text-sm font-bold">
                       {type}
                     </Badge>
                     <span className="text-xs text-muted-foreground text-center">
