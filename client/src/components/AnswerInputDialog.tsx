@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { type Challenge } from "@shared/schema";
 import { ExternalLink } from "lucide-react";
-import albumCover from "@assets/American Split Cover_1763171359272.png";
+import albumCover from "@assets/American Split Cover_1763172339559.png";
 
 interface AnswerInputDialogProps {
   open: boolean;
@@ -89,8 +89,10 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="answer">Your Answer</Label>
+          <div className="space-y-3">
+            <Label htmlFor="answer" className="text-base font-semibold">
+              Answer Your Challenge Below
+            </Label>
             <Textarea
               id="answer"
               placeholder="Type your answer here..."
@@ -99,32 +101,33 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
               className="min-h-[120px] resize-none"
               data-testid="input-answer"
             />
-            <p className="text-xs text-muted-foreground">
+            
+            {/* Yellow buttons below the text box */}
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleSubmit}
+                disabled={!answer.trim()}
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-3"
+                data-testid="button-submit-answer"
+              >
+                Share & Complete
+              </Button>
+              {onReject && (
+                <Button
+                  onClick={handleReject}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3"
+                  data-testid="button-reject-challenge"
+                >
+                  Reject Challenge
+                </Button>
+              )}
+            </div>
+            
+            <p className="text-xs text-muted-foreground text-center">
               Your answer will be included when you share this challenge on social media.
             </p>
           </div>
         </div>
-
-        <DialogFooter className="gap-2 flex-col sm:flex-row">
-          {onReject && (
-            <Button
-              variant="outline"
-              onClick={handleReject}
-              className="w-full sm:w-auto"
-              data-testid="button-reject-challenge"
-            >
-              Reject Challenge
-            </Button>
-          )}
-          <Button
-            onClick={handleSubmit}
-            disabled={!answer.trim()}
-            className="w-full sm:w-auto"
-            data-testid="button-submit-answer"
-          >
-            Share & Complete
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
