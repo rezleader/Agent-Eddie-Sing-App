@@ -62,14 +62,19 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
 
   // Facebook will use Open Graph tags from index.html to embed album cover and link to app
   const shareLink = "https://agenteddiesing.replit.app";
+  const albumCoverUrl = "https://agenteddiesing.replit.app/album-cover.png";
   
-  // Include user media link if they uploaded photo/video
+  // Include media links in post
   let mediaSection = "";
   if (media && media.filePath) {
+    // User uploaded photo/video - show their media
     const fullMediaUrl = media.filePath.startsWith('http') 
       ? media.filePath 
       : `${shareLink}${media.filePath}`;
     mediaSection = `\n\nMy ${media.mediaType === 'photo' ? 'Photo' : 'Video'}:\n${fullMediaUrl}\n`;
+  } else {
+    // No user media - include album cover link
+    mediaSection = `\n\nAlbum Cover:\n${albumCoverUrl}\n`;
   }
   
   const endingMessage = `${mediaSection}\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.`;
