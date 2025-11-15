@@ -53,6 +53,7 @@ const platformConfig = {
 
 export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist, mediaId, sessionToken }: SocialShareModalProps) {
   const [copiedText, setCopiedText] = useState(false);
+  const [showCopyWarning, setShowCopyWarning] = useState(false);
 
   // Fetch media if mediaId is provided
   const { data: media } = useQuery<UserMedia>({
@@ -61,23 +62,8 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
   });
 
   // Facebook will use Open Graph tags from index.html to embed album cover and link to app
-  const shareLink = "https://agenteddiesing.replit.app";
-  const albumCoverUrl = "https://agenteddiesing.replit.app/album-cover.png";
-  
-  // Include media links in post
-  let mediaSection = "";
-  if (media && media.filePath) {
-    // User uploaded photo/video - show their media
-    const fullMediaUrl = media.filePath.startsWith('http') 
-      ? media.filePath 
-      : `${shareLink}${media.filePath}`;
-    mediaSection = `\n\nMy ${media.mediaType === 'photo' ? 'Photo' : 'Video'}:\n${fullMediaUrl}\n`;
-  } else {
-    // No user media - include album cover link
-    mediaSection = `\n\nAlbum Cover:\n${albumCoverUrl}\n`;
-  }
-  
-  const endingMessage = `${mediaSection}\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.`;
+  // No media URLs in text - Facebook/Instagram will embed images via Open Graph
+  const endingMessage = `\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.`;
   
   // If no challenge (song-only share), create simple share text
   if (!challenge && songTitle) {
@@ -97,6 +83,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
       try {
         await navigator.clipboard.writeText(text);
         setCopiedText(true);
+        setShowCopyWarning(false);
         setTimeout(() => setCopiedText(false), 2000);
       } catch (err) {
         console.error('Failed to copy:', err);
@@ -104,6 +91,11 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
     };
 
     const handleShareFacebook = () => {
+      if (!copiedText) {
+        setShowCopyWarning(true);
+        setTimeout(() => setShowCopyWarning(false), 3000);
+        return;
+      }
       window.open(platformConfig.facebook.shareUrl!(text), '_blank');
     };
 
@@ -120,7 +112,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="modal-social-share">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="modal-social-share">
         <DialogHeader>
           <DialogTitle className="text-2xl">Share Your Challenge!</DialogTitle>
           <DialogDescription>
@@ -128,7 +120,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 pb-8">
           {/* Album Cover */}
           <div className="flex justify-center">
             <img 
@@ -188,9 +180,9 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             {text}
           </div>
 
-          {/* Copy button - Below text entry field */}
+          {/* Copy button - Below text entry field with flashing border */}
           <Button
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold text-lg py-6"
+            className={`w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold text-lg py-6 ${!copiedText ? 'animate-pulse ring-4 ring-yellow-400 ring-opacity-75' : ''}`}
             onClick={handleCopyText}
             data-testid="button-copy-text"
           >
@@ -206,6 +198,14 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               </>
             )}
           </Button>
+
+          {/* Copy Warning */}
+          {showCopyWarning && (
+            <div className="p-4 bg-destructive/15 border-2 border-destructive rounded-lg" data-testid="alert-copy-warning">
+              <p className="text-sm font-bold text-destructive">⚠️ Please copy the post text first!</p>
+              <p className="text-xs text-destructive mt-1">Click the yellow "Copy Post Text" button before sharing to Facebook.</p>
+            </div>
+          )}
 
           {/* Social platforms */}
           <div className="space-y-3">
@@ -224,10 +224,10 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               <div className="p-3 rounded-lg bg-muted/50 space-y-1">
                 <p className="text-xs font-semibold">Facebook sharing (with auto-embedded album cover!):</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Copy the post text using the button above</li>
-                  <li>Click "Share on Facebook" - album cover will appear automatically</li>
-                  <li>Add your copied text to the post</li>
-                  <li>Click Post - the image links back to agenteddiesing.replit.app</li>
+                  <li>Copy the post text using the yellow button above</li>
+                  <li>Click "Share on Facebook"</li>
+                  <li>Paste your copied text and click Post</li>
+                  <li>Album cover auto-embeds and links to agenteddiesing.replit.app</li>
                 </ol>
               </div>
             </div>
