@@ -5,7 +5,8 @@ export type MediaType = 'photo' | 'video';
 interface UseCameraCaptureResult {
   capturePhoto: () => Promise<File | null>;
   captureVideo: () => Promise<File | null>;
-  isCapturing: boolean;
+  isCapturingPhoto: boolean;
+  isCapturingVideo: boolean;
   error: string | null;
   clearError: () => void;
 }
@@ -14,7 +15,8 @@ const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 export function useCameraCapture(): UseCameraCaptureResult {
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
+  const [isCapturingVideo, setIsCapturingVideo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -154,7 +156,7 @@ export function useCameraCapture(): UseCameraCaptureResult {
   }, []);
 
   const capturePhoto = useCallback(async (): Promise<File | null> => {
-    setIsCapturing(true);
+    setIsCapturingPhoto(true);
     setError(null);
 
     try {
@@ -166,11 +168,11 @@ export function useCameraCapture(): UseCameraCaptureResult {
           // Validate size
           if (file.size > MAX_PHOTO_SIZE) {
             setError(`Photo size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 10MB limit`);
-            setIsCapturing(false);
+            setIsCapturingPhoto(false);
             return null;
           }
           
-          setIsCapturing(false);
+          setIsCapturingPhoto(false);
           return file;
         }
       }
@@ -182,33 +184,33 @@ export function useCameraCapture(): UseCameraCaptureResult {
         // Validate size
         if (file.size > MAX_PHOTO_SIZE) {
           setError(`Photo size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 10MB limit`);
-          setIsCapturing(false);
+          setIsCapturingPhoto(false);
           return null;
         }
 
         // Validate type
         if (!file.type.startsWith('image/')) {
           setError('Invalid file type. Please select an image.');
-          setIsCapturing(false);
+          setIsCapturingPhoto(false);
           return null;
         }
 
-        setIsCapturing(false);
+        setIsCapturingPhoto(false);
         return file;
       }
 
-      setIsCapturing(false);
+      setIsCapturingPhoto(false);
       return null;
     } catch (err) {
       console.error('Photo capture error:', err);
       setError('Failed to capture photo. Please try again.');
-      setIsCapturing(false);
+      setIsCapturingPhoto(false);
       return null;
     }
   }, [capturePhotoWithMediaDevices, createFileInput]);
 
   const captureVideo = useCallback(async (): Promise<File | null> => {
-    setIsCapturing(true);
+    setIsCapturingVideo(true);
     setError(null);
 
     try {
@@ -220,11 +222,11 @@ export function useCameraCapture(): UseCameraCaptureResult {
           // Validate size
           if (file.size > MAX_VIDEO_SIZE) {
             setError(`Video size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 100MB limit`);
-            setIsCapturing(false);
+            setIsCapturingVideo(false);
             return null;
           }
           
-          setIsCapturing(false);
+          setIsCapturingVideo(false);
           return file;
         }
       }
@@ -236,27 +238,27 @@ export function useCameraCapture(): UseCameraCaptureResult {
         // Validate size
         if (file.size > MAX_VIDEO_SIZE) {
           setError(`Video size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 100MB limit`);
-          setIsCapturing(false);
+          setIsCapturingVideo(false);
           return null;
         }
 
         // Validate type
         if (!file.type.startsWith('video/')) {
           setError('Invalid file type. Please select a video.');
-          setIsCapturing(false);
+          setIsCapturingVideo(false);
           return null;
         }
 
-        setIsCapturing(false);
+        setIsCapturingVideo(false);
         return file;
       }
 
-      setIsCapturing(false);
+      setIsCapturingVideo(false);
       return null;
     } catch (err) {
       console.error('Video capture error:', err);
       setError('Failed to capture video. Please try again.');
-      setIsCapturing(false);
+      setIsCapturingVideo(false);
       return null;
     }
   }, [captureVideoWithMediaDevices, createFileInput]);
@@ -264,7 +266,8 @@ export function useCameraCapture(): UseCameraCaptureResult {
   return {
     capturePhoto,
     captureVideo,
-    isCapturing,
+    isCapturingPhoto,
+    isCapturingVideo,
     error,
     clearError,
   };

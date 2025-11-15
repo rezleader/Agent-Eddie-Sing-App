@@ -24,7 +24,7 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
   const [capturedMedia, setCapturedMedia] = useState<UserMedia | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   
-  const { capturePhoto, captureVideo, isCapturing, error: captureError, clearError } = useCameraCapture();
+  const { capturePhoto, captureVideo, isCapturingPhoto, isCapturingVideo, error: captureError, clearError } = useCameraCapture();
   const { toast } = useToast();
 
   if (!challenge) return null;
@@ -193,11 +193,11 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
                   type="button"
                   variant="outline"
                   onClick={handleTakePhoto}
-                  disabled={isCapturing || isUploading || !!capturedMedia}
+                  disabled={isCapturingPhoto || isCapturingVideo || isUploading || !!capturedMedia}
                   className="flex items-center gap-2"
                   data-testid="button-take-photo"
                 >
-                  {isCapturing || isUploading ? (
+                  {isCapturingPhoto || isUploading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Camera className="w-4 h-4" />
@@ -208,11 +208,11 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
                   type="button"
                   variant="outline"
                   onClick={handleRecordVideo}
-                  disabled={isCapturing || isUploading || !!capturedMedia}
+                  disabled={isCapturingPhoto || isCapturingVideo || isUploading || !!capturedMedia}
                   className="flex items-center gap-2"
                   data-testid="button-record-video"
                 >
-                  {isCapturing || isUploading ? (
+                  {isCapturingVideo || isUploading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Video className="w-4 h-4" />
