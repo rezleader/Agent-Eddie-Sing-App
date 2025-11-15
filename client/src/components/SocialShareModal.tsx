@@ -83,8 +83,9 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
   
   if (!challenge) return null;
 
-  const answerSection = userAnswer ? `\n\nMy Answer:\n"${userAnswer}"\n` : "";
-  const shareText = `I just completed a challenge in American Split AI ARG!\n\n"${challenge.title}"${answerSection}\nCategory: ${categoryDisplayNames[challenge.category as ChallengeCategory]}\nPoints Earned: ${points}${endingMessage}`;
+  const questionSection = `Challenge Question:\n"${challenge.description}"`;
+  const answerSection = userAnswer ? `\n\nMy Answer:\n"${userAnswer}"` : "";
+  const shareText = `I just completed a challenge in American Split AI ARG!\n\n${questionSection}${answerSection}\n\nCategory: ${categoryDisplayNames[challenge.category as ChallengeCategory]}\nPoints Earned: ${points}${endingMessage}`;
 
   return renderShareDialog(shareText);
 
