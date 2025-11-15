@@ -54,6 +54,22 @@ export const userSessions = pgTable("user_sessions", {
   lastActive: timestamp("last_active").defaultNow().notNull(),
 });
 
+// Media types
+export const mediaTypes = ["photo", "video"] as const;
+export type MediaType = typeof mediaTypes[number];
+
+// User media - stores user-uploaded photos and videos
+export const userMedia = pgTable("user_media", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionToken: text("session_token").notNull(), // link to user session
+  challengeId: varchar("challenge_id").references(() => challenges.id, { onDelete: "cascade" }),
+  mediaType: text("media_type").notNull(), // 'photo' or 'video'
+  filePath: text("file_path").notNull(), // path to uploaded file in object storage
+  fileSize: integer("file_size"), // in bytes
+  mimeType: text("mime_type"), // e.g., image/jpeg, video/mp4
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertSongSchema = createInsertSchema(songs).omit({
   id: true,
@@ -77,6 +93,13 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
   lastActive: true,
 });
 
+export const insertUserMediaSchema = createInsertSchema(userMedia).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  mediaType: z.enum(mediaTypes),
+});
+
 // Types
 export type InsertSong = z.infer<typeof insertSongSchema>;
 export type Song = typeof songs.$inferSelect;
@@ -86,6 +109,9 @@ export type Challenge = typeof challenges.$inferSelect;
 
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
+
+export type InsertUserMedia = z.infer<typeof insertUserMediaSchema>;
+export type UserMedia = typeof userMedia.$inferSelect;
 
 // Helper types for frontend
 export interface SongWithChallenges extends Song {
