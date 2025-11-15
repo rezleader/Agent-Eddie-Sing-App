@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { TimelineSegment } from "@/components/TimelineSegment";
 import { SocialShareModal } from "@/components/SocialShareModal";
+import { ChallengeResourcesModal } from "@/components/ChallengeResourcesModal";
 import { ChallengeCompletionModal } from "@/components/ChallengeCompletionModal";
 import { AnswerInputDialog } from "@/components/AnswerInputDialog";
 import { PointsDisplay } from "@/components/PointsDisplay";
@@ -42,6 +43,8 @@ export function SongChallenges({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareChallenge, setShareChallenge] = useState<Challenge | null>(null);
   const [sharePoints, setSharePoints] = useState(0);
+  const [resourcesModalOpen, setResourcesModalOpen] = useState(false);
+  const [resourcesChallenge, setResourcesChallenge] = useState<Challenge | null>(null);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
   const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
@@ -88,9 +91,17 @@ export function SongChallenges({
         ? { ...challenge, points: Math.max(5, challenge.points - (rejectionCount * 10)) }
         : challenge;
       
+      // NEW FLOW: Show resources modal first
+      setResourcesChallenge(adjustedChallenge);
       setAnswerChallenge(adjustedChallenge);
-      setAnswerDialogOpen(true);
+      setResourcesModalOpen(true);
     }
+  };
+
+  const handleContinueToChallenge = () => {
+    // Close resources modal and open answer dialog
+    setResourcesModalOpen(false);
+    setAnswerDialogOpen(true);
   };
 
   const handleRejectChallenge = () => {
@@ -123,7 +134,7 @@ export function SongChallenges({
   };
 
   const handleShareComplete = () => {
-    // After sharing, complete the challenge
+    // After sharing, complete the challenge and show completion modal
     if (completedChallenge) {
       onAcceptChallenge(completedChallenge.id);
       setShareModalOpen(false);
@@ -413,7 +424,15 @@ export function SongChallenges({
         sessionToken={sessionToken}
       />
 
-      {/* Completion modal */}
+      {/* Resources modal - shown BEFORE answering */}
+      <ChallengeResourcesModal
+        open={resourcesModalOpen}
+        onOpenChange={setResourcesModalOpen}
+        challenge={resourcesChallenge}
+        onContinue={handleContinueToChallenge}
+      />
+
+      {/* Completion modal - shown AFTER sharing */}
       <ChallengeCompletionModal
         open={completionModalOpen}
         onOpenChange={setCompletionModalOpen}
@@ -427,7 +446,7 @@ export function SongChallenges({
         onOpenChange={(open) => {
           setShareModalOpen(open);
           if (!open && completedChallenge) {
-            // When share modal closes and we have a completed challenge, trigger completion
+            // When share modal closes, trigger completion
             handleShareComplete();
           }
         }}

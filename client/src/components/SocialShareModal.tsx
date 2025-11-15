@@ -11,6 +11,7 @@ import albumCover from "@assets/American Split Cover_1763172339559.png";
 interface SocialShareModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onShareSuccess?: () => void; // NEW: Called when user actually shares
   challenge: Challenge | null;
   points: number;
   userAnswer?: string;
@@ -51,7 +52,7 @@ const platformConfig = {
   },
 };
 
-export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist, mediaId, sessionToken }: SocialShareModalProps) {
+export function SocialShareModal({ open, onOpenChange, onShareSuccess, challenge, points, userAnswer = "", songTitle, songArtist, mediaId, sessionToken }: SocialShareModalProps) {
   const [copiedText, setCopiedText] = useState(false);
   const [showCopyWarning, setShowCopyWarning] = useState(false);
   const [justCopied, setJustCopied] = useState(false); // For button feedback only
@@ -109,6 +110,8 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
         return;
       }
       window.open(platformConfig.facebook.shareUrl!(text), '_blank');
+      // Call success callback after opening share window
+      if (onShareSuccess) onShareSuccess();
     };
 
     const handleShareInstagram = () => {
@@ -120,6 +123,8 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
         // On desktop, open Instagram website
         window.open('https://www.instagram.com/', '_blank');
       }
+      // Call success callback after opening Instagram
+      if (onShareSuccess) onShareSuccess();
     };
 
     return (
