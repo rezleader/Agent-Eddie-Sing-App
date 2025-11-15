@@ -4,7 +4,7 @@ import { CategoryBadge } from "./CategoryBadge";
 import { ChallengeBadge } from "./ChallengeBadge";
 import { PointsDisplay } from "./PointsDisplay";
 import { type Challenge, type ChallengeCategory, type ChallengeType } from "@shared/schema";
-import { CheckCircle2, Share2 } from "lucide-react";
+import { CheckCircle2, Share2, ExternalLink } from "lucide-react";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -46,10 +46,30 @@ export function ChallengeCard({
         </CardTitle>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-4">
         <CardDescription className="text-base text-foreground/80 leading-relaxed">
           {challenge.description}
         </CardDescription>
+        
+        {challenge.organization && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Related Organization:</p>
+              <p className="text-sm text-muted-foreground">{challenge.organization}</p>
+              {challenge.organizationUrl && (
+                <a 
+                  href={challenge.organizationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                  data-testid={`link-organization-${challenge.id}`}
+                >
+                  Learn More <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="flex items-center justify-between gap-4 pt-4 border-t flex-wrap">

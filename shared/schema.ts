@@ -35,6 +35,8 @@ export const challenges = pgTable("challenges", {
   points: integer("points").notNull(), // 1-100
   songId: varchar("song_id").references(() => songs.id, { onDelete: "cascade" }),
   segment: integer("segment").notNull(), // 1, 2, 3, or 4 (minute segments)
+  organization: text("organization"), // Related organization/resource
+  organizationUrl: text("organization_url"), // Link to organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
