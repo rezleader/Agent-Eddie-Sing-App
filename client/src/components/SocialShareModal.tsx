@@ -91,11 +91,13 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
     };
 
     const handleShareInstagram = () => {
-      // Copy both text and link for Instagram
-      handleCopyText();
-      // On mobile, try to open Instagram app
+      // Open Instagram
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        window.open('instagram://story-camera', '_blank');
+        // On mobile, try to open Instagram app
+        window.open('instagram://', '_blank');
+      } else {
+        // On desktop, open Instagram website
+        window.open('https://www.instagram.com/', '_blank');
       }
     };
 
@@ -164,7 +166,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               </p>
             </div>
 
-            {/* Instagram - Manual share instructions */}
+            {/* Instagram - Open Instagram */}
             <div className="space-y-2">
               <Button
                 onClick={handleShareInstagram}
@@ -172,14 +174,15 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
                 data-testid="button-share-instagram"
               >
                 <SiInstagram className="w-5 h-5" />
-                Copy for Instagram
+                Open Instagram
               </Button>
               <div className="p-3 rounded-lg bg-muted/50 space-y-1">
                 <p className="text-xs font-semibold">How to share on Instagram:</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Save the album cover image above (long-press or right-click)</li>
-                  <li>Text copied! Open Instagram and create a post/story</li>
-                  <li>Upload the album cover image</li>
+                  <li>Click "Copy Post Text" above</li>
+                  <li>Save the album cover image (long-press or right-click)</li>
+                  <li>Click "Open Instagram" to go to Instagram</li>
+                  <li>Create a post/story and upload the album cover</li>
                   <li>Paste your text in the caption</li>
                 </ol>
               </div>
