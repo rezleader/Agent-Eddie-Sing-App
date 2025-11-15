@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok } from "react-icons/si";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
@@ -12,6 +13,8 @@ interface SocialShareModalProps {
   challenge: Challenge | null;
   points: number;
   userAnswer?: string;
+  songTitle?: string;
+  songArtist?: string;
 }
 
 const platformConfig = {
@@ -41,43 +44,62 @@ const platformConfig = {
   },
 };
 
-export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "" }: SocialShareModalProps) {
-  const [copied, setCopied] = useState(false);
+export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist }: SocialShareModalProps) {
+  const [copiedText, setCopiedText] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
+  const shareLink = "https://agenteddiesing.replit.app";
+  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nVisit: https://agenteddiesing.replit.app\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
+  
+  // If no challenge (song-only share), create simple share text
+  if (!challenge && songTitle) {
+    const shareText = `Just discovered this amazing song: ${songTitle} by ${songArtist}!${endingMessage}`;
+    return renderShareDialog(shareText);
+  }
+  
   if (!challenge) return null;
 
   const answerSection = userAnswer ? `\n\nMy Answer:\n"${userAnswer}"\n` : "";
-  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nVisit: https://agenteddiesing.replit.app\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
-  
   const shareText = `I just completed a challenge in American Split AI ARG!\n\n"${challenge.title}"${answerSection}\nCategory: ${categoryDisplayNames[challenge.category as ChallengeCategory]}\nPoints Earned: ${points}${endingMessage}`;
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
+  return renderShareDialog(shareText);
 
-  const handleShare = (platform: keyof typeof platformConfig) => {
-    const config = platformConfig[platform];
-    
-    // For Instagram and Snapchat, just copy the text
-    if (platform === 'instagram' || platform === 'snapchat') {
-      handleCopy();
-      return;
-    }
+  function renderShareDialog(text: string) {
+    const handleCopyText = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedText(true);
+        setTimeout(() => setCopiedText(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    };
 
-    // Desktop sharing for Facebook
-    if (config.shareUrl) {
-      window.open(config.shareUrl(shareText), '_blank', 'width=600,height=400');
-    }
-  };
+    const handleCopyLink = async () => {
+      try {
+        await navigator.clipboard.writeText(shareLink);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    const handleShareFacebook = () => {
+      window.open(platformConfig.facebook.shareUrl!(text), '_blank', 'width=600,height=400');
+    };
+
+    const handleShareInstagram = () => {
+      // Copy both text and link for Instagram
+      handleCopyText();
+      // On mobile, try to open Instagram app
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        window.open('instagram://story-camera', '_blank');
+      }
+    };
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" data-testid="modal-social-share">
         <DialogHeader>
           <DialogTitle className="text-2xl">Share Your Challenge!</DialogTitle>
@@ -97,27 +119,56 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             />
           </div>
 
+          {/* Shareable Link */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Share This Link:</Label>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                readOnly 
+                value={shareLink}
+                className="flex-1 px-3 py-2 text-sm rounded-md border bg-muted"
+                data-testid="input-share-link"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                data-testid="button-copy-link"
+              >
+                {copiedLink ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Copy this link to share the ARG game with your post
+            </p>
+          </div>
+
           {/* Preview */}
-          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap" data-testid="text-share-preview">
-            {shareText}
+          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
+            {text}
           </div>
 
           {/* Copy button */}
           <Button
             variant="outline"
             className="w-full"
-            onClick={handleCopy}
+            onClick={handleCopyText}
             data-testid="button-copy-text"
           >
-            {copied ? (
+            {copiedText ? (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                Copied!
+                Post Text Copied!
               </>
             ) : (
               <>
                 <Copy className="w-4 h-4 mr-2" />
-                Copy the Post
+                Copy Post Text
               </>
             )}
           </Button>
@@ -128,46 +179,39 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             
             {/* Facebook - Direct share */}
             <Button
-              onClick={() => handleShare('facebook')}
-              className="w-full bg-[#1877F2] hover:bg-[#0C63D4] text-white"
+              onClick={handleShareFacebook}
+              className="w-full bg-[#1877F2] hover:bg-[#0C63D4] text-white gap-2"
               data-testid="button-share-facebook"
             >
-              <SiFacebook className="w-5 h-5 mr-2" />
+              <SiFacebook className="w-5 h-5" />
               Share on Facebook
             </Button>
 
-            {/* Instagram - Copy and open */}
+            {/* Instagram - Manual share instructions */}
             <div className="space-y-2">
               <Button
-                onClick={() => handleShare('instagram')}
-                className="w-full bg-gradient-to-tr from-[#FCAF45] via-[#E1306C] to-[#833AB4] hover:opacity-90 text-white"
+                onClick={handleShareInstagram}
+                className="w-full bg-gradient-to-tr from-[#FCAF45] via-[#E1306C] to-[#833AB4] hover:opacity-90 text-white gap-2"
                 data-testid="button-share-instagram"
               >
-                <SiInstagram className="w-5 h-5 mr-2" />
-                Copy for Instagram
+                <SiInstagram className="w-5 h-5" />
+                Share on Instagram
               </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Text copied! Open Instagram and paste into your story or post with the album cover image.
-              </p>
-            </div>
-
-            {/* Snapchat - Copy and open */}
-            <div className="space-y-2">
-              <Button
-                onClick={() => handleShare('snapchat')}
-                className="w-full bg-[#FFFC00] text-black hover:bg-[#E6E300]"
-                data-testid="button-share-snapchat"
-              >
-                <SiSnapchat className="w-5 h-5 mr-2" />
-                Copy for Snapchat
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Text copied! Open Snapchat and paste into your story with the album cover image.
-              </p>
+              <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+                <p className="text-xs font-semibold">How to share on Instagram:</p>
+                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Save the album cover image above</li>
+                  <li>Copy the post text and link</li>
+                  <li>Open Instagram and create a post/story</li>
+                  <li>Upload the album cover image</li>
+                  <li>Paste your text and the link in the caption</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  );
+    );
+  }
 }
