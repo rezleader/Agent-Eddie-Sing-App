@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import { mkdir } from "fs/promises";
-import { insertSongSchema, insertChallengeSchema, type InsertSong, type InsertChallenge } from "@shared/schema";
+import { insertSongSchema, insertChallengeSchema, insertUserMediaSchema, type InsertSong, type InsertChallenge, type InsertUserMedia } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { acrCloudService } from "./acrcloud-service";
 import { acrCloudUploadService } from "./acrcloud-upload";
@@ -46,6 +46,34 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only audio files are allowed'));
+    }
+  }
+});
+
+// Configure multer for image/video uploads
+const mediaUploadDir = "/tmp/media-uploads";
+mkdir(mediaUploadDir, { recursive: true }).catch(console.error);
+
+const mediaStorage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, mediaUploadDir);
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + randomUUID();
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const mediaUpload = multer({
+  storage: mediaStorage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for videos, 10MB for photos enforced in route
+  fileFilter: (_req, file, cb) => {
+    // Accept images and videos only
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image (JPEG, PNG, WebP) and video (MP4, WebM) files are allowed'));
     }
   }
 });
@@ -504,6 +532,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error completing challenge:", error);
       res.status(500).json({ error: "Failed to complete challenge" });
+    }
+  });
+
+  // Media upload endpoints
+  app.post("/api/media/upload", mediaUpload.single('mediaFile'), async (req, res) => {
+    let tempFilePath: string | undefined;
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Media file is required" });
+      }
+
+      const { sessionToken, challengeId, mediaType } = req.body;
+
+      if (!sessionToken || !challengeId || !mediaType) {
+        return res.status(400).json({ error: "sessionToken, challengeId, and mediaType are required" });
+      }
+
+      // Verify session exists
+      const session = await storage.getUserSession(sessionToken);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Verify challenge exists
+      const challenge = await storage.getChallenge(challengeId);
+      if (!challenge) {
+        return res.status(404).json({ error: "Challenge not found" });
+      }
+
+      tempFilePath = req.file.path;
+      const fileSize = req.file.size;
+      const mimeType = req.file.mimetype;
+
+      // Validate file size based on media type
+      const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+      const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+      if (mediaType === 'photo' && fileSize > MAX_PHOTO_SIZE) {
+        return res.status(400).json({ error: "Photo size exceeds 10MB limit" });
+      }
+
+      if (mediaType === 'video' && fileSize > MAX_VIDEO_SIZE) {
+        return res.status(400).json({ error: "Video size exceeds 100MB limit" });
+      }
+
+      // Validate MIME type
+      const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const allowedVideoTypes = ['video/mp4', 'video/webm'];
+
+      if (mediaType === 'photo' && !allowedPhotoTypes.includes(mimeType)) {
+        return res.status(400).json({ error: "Invalid photo format. Only JPEG, PNG, and WebP are allowed" });
+      }
+
+      if (mediaType === 'video' && !allowedVideoTypes.includes(mimeType)) {
+        return res.status(400).json({ error: "Invalid video format. Only MP4 and WebM are allowed" });
+      }
+
+      // Upload to Object Storage (private directory)
+      const privateDir = process.env.PRIVATE_OBJECT_DIR || "";
+      if (!privateDir) {
+        return res.status(500).json({ error: "Object storage not configured" });
+      }
+
+      console.log(`[Media Upload] Uploading ${mediaType} for challenge ${challengeId}...`);
+      const destinationPath = `user-media/${sessionToken}/${req.file.filename}`;
+      const objectPath = await objectStorageService.uploadToPublic(
+        req.file.path,
+        destinationPath,
+        mimeType
+      );
+      console.log(`[Media Upload] ✅ Uploaded to: ${objectPath}`);
+
+      // Create media metadata record
+      const mediaData: InsertUserMedia = {
+        sessionToken,
+        challengeId,
+        mediaType,
+        filePath: objectPath,
+        fileSize,
+        mimeType,
+      };
+
+      const validated = insertUserMediaSchema.parse(mediaData);
+      const media = await storage.createUserMedia(validated);
+
+      res.status(201).json(media);
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        error: "Failed to upload media", 
+        details: errorMessage 
+      });
+    } finally {
+      // Clean up temp file
+      if (tempFilePath) {
+        try {
+          const { unlink } = await import('fs/promises');
+          await unlink(tempFilePath);
+          console.log(`[Media Upload] 🗑️  Cleaned up temp file: ${tempFilePath}`);
+        } catch (cleanupError) {
+          console.warn(`[Media Upload] ⚠️  Could not delete temp file:`, cleanupError);
+        }
+      }
+    }
+  });
+
+  app.get("/api/media/:mediaId", async (req, res) => {
+    try {
+      const media = await storage.getUserMedia(req.params.mediaId);
+      if (!media) {
+        return res.status(404).json({ error: "Media not found" });
+      }
+      res.json(media);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch media" });
+    }
+  });
+
+  app.get("/api/media/challenge/:sessionToken/:challengeId", async (req, res) => {
+    try {
+      const { sessionToken, challengeId } = req.params;
+      const mediaList = await storage.getUserMediaByChallengeAndSession(sessionToken, challengeId);
+      res.json(mediaList);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch media" });
     }
   });
 

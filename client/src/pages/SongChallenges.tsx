@@ -20,6 +20,7 @@ interface SongChallengesProps {
   completedChallengeIds: string[];
   totalPoints: number;
   lockedChallengeType: string | null | undefined; // Server-provided locked type
+  sessionToken: string;
   onAcceptChallenge: (challengeId: string) => void;
   onBack: () => void;
 }
@@ -31,6 +32,7 @@ export function SongChallenges({
   completedChallengeIds, 
   totalPoints,
   lockedChallengeType,
+  sessionToken,
   onAcceptChallenge,
   onBack 
 }: SongChallengesProps) {
@@ -45,6 +47,7 @@ export function SongChallenges({
   const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
   const [answerChallenge, setAnswerChallenge] = useState<Challenge | null>(null);
   const [userAnswer, setUserAnswer] = useState("");
+  const [shareMediaId, setShareMediaId] = useState<string | undefined>(undefined);
   const [rejectionCount, setRejectionCount] = useState(0);
   const [showSkipOption, setShowSkipOption] = useState(false);
 
@@ -103,8 +106,9 @@ export function SongChallenges({
     setSelectedCategory(null);
   };
 
-  const handleAnswerSubmit = (answer: string) => {
+  const handleAnswerSubmit = (answer: string, mediaId?: string) => {
     setUserAnswer(answer);
+    setShareMediaId(mediaId);
     setAnswerDialogOpen(false);
     
     // Open share modal immediately with the answer
@@ -406,6 +410,7 @@ export function SongChallenges({
         onSubmit={handleAnswerSubmit}
         onReject={handleRejectChallenge}
         songTitle={song.title}
+        sessionToken={sessionToken}
       />
 
       {/* Completion modal */}
@@ -431,6 +436,8 @@ export function SongChallenges({
         userAnswer={userAnswer}
         songTitle={song.title}
         songArtist={song.artist}
+        mediaId={shareMediaId}
+        sessionToken={sessionToken}
       />
     </div>
   );

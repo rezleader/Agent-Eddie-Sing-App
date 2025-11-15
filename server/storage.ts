@@ -1,5 +1,5 @@
-import { type Song, type InsertSong, type Challenge, type InsertChallenge, type UserSession, type InsertUserSession, songs, challenges, userSessions } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { type Song, type InsertSong, type Challenge, type InsertChallenge, type UserSession, type InsertUserSession, type UserMedia, type InsertUserMedia, songs, challenges, userSessions, userMedia } from "@shared/schema";
+import { eq, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 
@@ -27,6 +27,11 @@ export interface IStorage {
   addCompletedChallenge(sessionToken: string, challengeId: string): Promise<UserSession | undefined>;
   updateScanSession(sessionToken: string, songId: string, segment: number): Promise<UserSession | undefined>;
   lockChallengeType(sessionToken: string, challengeType: string): Promise<UserSession | undefined>;
+  
+  // User Media
+  createUserMedia(media: InsertUserMedia): Promise<UserMedia>;
+  getUserMedia(id: string): Promise<UserMedia | undefined>;
+  getUserMediaByChallengeAndSession(sessionToken: string, challengeId: string): Promise<UserMedia[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -201,6 +206,35 @@ export class PostgresStorage implements IStorage {
       .where(eq(userSessions.sessionToken, sessionToken))
       .returning();
     return result[0];
+  }
+
+  // User Media
+  async createUserMedia(insertMedia: InsertUserMedia): Promise<UserMedia> {
+    const result = await this.db
+      .insert(userMedia)
+      .values(insertMedia)
+      .returning();
+    return result[0];
+  }
+
+  async getUserMedia(id: string): Promise<UserMedia | undefined> {
+    const result = await this.db
+      .select()
+      .from(userMedia)
+      .where(eq(userMedia.id, id));
+    return result[0];
+  }
+
+  async getUserMediaByChallengeAndSession(sessionToken: string, challengeId: string): Promise<UserMedia[]> {
+    return await this.db
+      .select()
+      .from(userMedia)
+      .where(
+        and(
+          eq(userMedia.sessionToken, sessionToken),
+          eq(userMedia.challengeId, challengeId)
+        )
+      );
   }
 }
 
