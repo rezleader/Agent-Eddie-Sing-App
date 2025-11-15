@@ -225,7 +225,7 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
                         Tap to Listen
                       </p>
                       <p className="text-base text-muted-foreground">
-                        Play an Agent Eddie Sing song and tap here to identify it
+                        Play An Eddie Sing & The 31 Days song off of American Split AI and tap here to identify it.
                       </p>
                     </div>
                   </div>
