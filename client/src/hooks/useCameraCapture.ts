@@ -161,7 +161,7 @@ export function useCameraCapture(): UseCameraCaptureResult {
 
     try {
       // Try getUserMedia first (preferred method)
-      if (navigator.mediaDevices?.getUserMedia) {
+      if (navigator.mediaDevices) {
         const file = await capturePhotoWithMediaDevices();
         
         if (file) {
@@ -215,7 +215,7 @@ export function useCameraCapture(): UseCameraCaptureResult {
 
     try {
       // Try getUserMedia first (preferred method)
-      if (navigator.mediaDevices?.getUserMedia) {
+      if (navigator.mediaDevices) {
         const file = await captureVideoWithMediaDevices();
         
         if (file) {
