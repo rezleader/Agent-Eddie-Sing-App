@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok } from "react-icons/si";
 import { Copy, Check, ExternalLink, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type Challenge, type UserMedia, categoryDisplayNames, type ChallengeCategory } from "@shared/schema";
 import albumCover from "@assets/American Split Cover_1763172339559.png";
@@ -55,6 +55,15 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
   const [copiedText, setCopiedText] = useState(false);
   const [showCopyWarning, setShowCopyWarning] = useState(false);
   const [justCopied, setJustCopied] = useState(false); // For button feedback only
+
+  // Reset all state when modal closes to ensure fresh validation on next open
+  useEffect(() => {
+    if (!open) {
+      setCopiedText(false);
+      setShowCopyWarning(false);
+      setJustCopied(false);
+    }
+  }, [open]);
 
   // Fetch media if mediaId is provided
   const { data: media } = useQuery<UserMedia>({
