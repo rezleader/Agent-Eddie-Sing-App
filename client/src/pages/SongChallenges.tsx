@@ -57,20 +57,19 @@ export function SongChallenges({
   }, {} as Record<number, Challenge[]>);
 
   // Filter challenges by selected segment, type, and category
-  const filteredChallenges = challenges.filter(challenge => {
+  const allFilteredChallenges = challenges.filter(challenge => {
     const segmentMatch = selectedSegment === null || challenge.segment === selectedSegment;
     const typeMatch = selectedType === null || challenge.type === selectedType;
     const categoryMatch = selectedCategory === null || challenge.category === selectedCategory;
     return segmentMatch && typeMatch && categoryMatch;
   });
 
-  // Debug logging
-  console.log('[SongChallenges] Total challenges:', challenges.length);
-  console.log('[SongChallenges] Filters:', { selectedSegment, selectedType, selectedCategory });
-  console.log('[SongChallenges] Filtered count:', filteredChallenges.length);
-  if (selectedType && selectedCategory && filteredChallenges.length > 0) {
-    console.log('[SongChallenges] First filtered challenge:', filteredChallenges[0]);
-  }
+  // ROTATION LOGIC: Show only 1 challenge, rotate based on timestamp
+  // This ensures different users see different challenges
+  const rotationIndex = Math.floor(Date.now() / 60000) % Math.max(1, allFilteredChallenges.length);
+  const filteredChallenges = allFilteredChallenges.length > 0 
+    ? [allFilteredChallenges[rotationIndex]]
+    : [];
 
   const handleShare = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
