@@ -54,7 +54,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
   // Get the full URL to the album cover image
   const albumCoverUrl = new URL(albumCover, window.location.origin).href;
   const shareLink = "https://agenteddiesing.replit.app";
-  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nVisit: https://agenteddiesing.replit.app\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
+  const endingMessage = "\n\nScan the album American Split AI available at AgentEddieSing.com to scan the songs and take part in the ARG game.\n\nSkabe din fremtid, Eddie Sing & The 31 Days.";
   
   // If no challenge (song-only share), create simple share text
   if (!challenge && songTitle) {
@@ -116,12 +116,12 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             />
           </div>
 
-          {/* Important instruction */}
-          <div className="bg-yellow-500 text-black p-3 rounded-lg text-center font-semibold">
-            First: Copy this text before sharing
+          {/* Preview */}
+          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
+            {text}
           </div>
 
-          {/* Copy button - Prominent gold styling */}
+          {/* Copy button - Below text entry field */}
           <Button
             className="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold text-lg py-6"
             onClick={handleCopyText}
@@ -139,11 +139,6 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
               </>
             )}
           </Button>
-
-          {/* Preview */}
-          <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap max-h-48 overflow-y-auto" data-testid="text-share-preview">
-            {text}
-          </div>
 
           {/* Social platforms */}
           <div className="space-y-3">
