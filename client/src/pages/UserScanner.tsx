@@ -160,7 +160,7 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
               Listen & Recognize
             </CardTitle>
             <CardDescription className="text-base">
-              Play an Agent Eddie Sing song and hold your device near the speakers to identify it and unlock challenges
+              Play Eddie Sing & The 31 Days; song off of their album American Split AI on any platform and hold your device near the speakers to identify it and unlock challenges for Agent Eddie Sing ARG points and make your way to the Leaderboard.
             </CardDescription>
           </CardHeader>
 
@@ -241,9 +241,9 @@ export function UserScanner({ onSongDetected, totalPoints, isRecognizing = false
             <div className="space-y-3">
               <h3 className="font-bold text-lg">How It Works:</h3>
               <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>Play an Agent Eddie Sing song on any device</li>
+                <li>Play any Eddie Sing & The 31 Days song off of their album, American Split on any streaming platform.</li>
                 <li>Tap the microphone button above</li>
-                <li>Hold your device near the speakers for 5-10 seconds</li>
+                <li>Hold your device near the speakers for 10 seconds.</li>
                 <li>Our system identifies the song AND which minute segment you're in</li>
                 <li>View challenges specific to that time segment</li>
                 <li>Complete challenges to earn points and share on social media</li>
