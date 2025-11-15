@@ -45,12 +45,13 @@ function UserRoutes() {
 
   const { toast } = useToast();
   const createSession = useCreateSession();
-  const { data: session } = useUserSession(sessionToken);
+  const { data: session, isError: sessionError } = useUserSession(sessionToken);
   const completeChallenge = useCompleteChallenge();
   const recognizeSong = useRecognizeSong();
 
+  // Create session if none exists or if current session is invalid
   useEffect(() => {
-    if (!sessionToken) {
+    if (!sessionToken || sessionError) {
       createSession.mutate(undefined, {
         onSuccess: async (response) => {
           const newSession = await response.json();
@@ -59,7 +60,7 @@ function UserRoutes() {
         },
       });
     }
-  }, [sessionToken]);
+  }, [sessionToken, sessionError]);
 
   const handleSongDetected = (song: Song, challenges: Challenge[], segment: number) => {
     setCurrentSong(song);
