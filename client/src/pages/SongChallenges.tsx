@@ -6,6 +6,7 @@ import { ChallengeCard } from "@/components/ChallengeCard";
 import { TimelineSegment } from "@/components/TimelineSegment";
 import { SocialShareModal } from "@/components/SocialShareModal";
 import { ChallengeCompletionModal } from "@/components/ChallengeCompletionModal";
+import { AnswerInputDialog } from "@/components/AnswerInputDialog";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,9 @@ export function SongChallenges({
   const [sharePoints, setSharePoints] = useState(0);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
+  const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
+  const [answerChallenge, setAnswerChallenge] = useState<Challenge | null>(null);
+  const [userAnswer, setUserAnswer] = useState("");
 
   // Reset category selection when type changes to prevent empty filter results
   useEffect(() => {
@@ -71,22 +75,29 @@ export function SongChallenges({
     ? [allFilteredChallenges[rotationIndex]]
     : [];
 
-  const handleShare = (challengeId: string) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (challenge) {
-      setShareChallenge(challenge);
-      setSharePoints(challenge.points);
-      setShareModalOpen(true);
-    }
-  };
-
   const handleAccept = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
-      onAcceptChallenge(challengeId);
-      setCompletedChallenge(challenge);
+      setAnswerChallenge(challenge);
+      setAnswerDialogOpen(true);
+    }
+  };
+
+  const handleAnswerSubmit = (answer: string) => {
+    setUserAnswer(answer);
+    setAnswerDialogOpen(false);
+    
+    // Complete the challenge
+    if (answerChallenge) {
+      onAcceptChallenge(answerChallenge.id);
+      setCompletedChallenge(answerChallenge);
       setCompletionModalOpen(true);
-      // Auto-open share modal after accepting
+    }
+  };
+
+  const handleShare = (challengeId: string) => {
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (challenge) {
       setShareChallenge(challenge);
       setSharePoints(challenge.points);
       setShareModalOpen(true);
@@ -325,6 +336,14 @@ export function SongChallenges({
         </div>
       </div>
 
+      {/* Answer input dialog */}
+      <AnswerInputDialog
+        open={answerDialogOpen}
+        onOpenChange={setAnswerDialogOpen}
+        challenge={answerChallenge}
+        onSubmit={handleAnswerSubmit}
+      />
+
       {/* Completion modal */}
       <ChallengeCompletionModal
         open={completionModalOpen}
@@ -339,6 +358,7 @@ export function SongChallenges({
         onOpenChange={setShareModalOpen}
         challenge={shareChallenge}
         points={sharePoints}
+        userAnswer={userAnswer}
       />
     </div>
   );
