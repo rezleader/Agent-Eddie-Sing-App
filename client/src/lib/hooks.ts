@@ -191,12 +191,14 @@ export function useCompleteChallenge() {
 // Song recognition hook
 export function useRecognizeSong() {
   return useMutation({
-    mutationFn: async (audioBlob: Blob) => {
+    mutationFn: async ({ audioBlob, sessionToken }: { audioBlob: Blob; sessionToken: string }) => {
       console.log('[Recognition] Starting recognition...');
       console.log('[Recognition] Blob size:', audioBlob.size, 'bytes');
       console.log('[Recognition] Blob type:', audioBlob.type);
       
       const formData = new FormData();
+      // IMPORTANT: Append sessionToken BEFORE audioFile for multer to parse it correctly
+      formData.append("sessionToken", sessionToken);
       // Convert blob to file with proper extension
       const audioFile = new File([audioBlob], 'recording.webm', { type: audioBlob.type });
       formData.append("audioFile", audioFile);
@@ -218,12 +220,18 @@ export function useRecognizeSong() {
 
       const result = await response.json();
       console.log('[Recognition] Success:', result);
-      return result as Promise<{
+      return result as {
         song: Song;
         challenges: Challenge[];
         segment: number;
         confidence: number;
-      }>;
+        session: UserSession;
+      };
+    },
+    onSuccess: (_data, variables) => {
+      // Invalidate session query to refetch with updated lock state
+      // Using invalidation instead of setQueryData to avoid losing completedChallenges/points
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", variables.sessionToken] });
     },
   });
 }

@@ -444,19 +444,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Challenge ID is required" });
       }
 
+      // Load session
+      let session = await storage.getUserSession(req.params.sessionToken);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Load challenge
       const challenge = await storage.getChallenge(challengeId);
       if (!challenge) {
         return res.status(404).json({ error: "Challenge not found" });
       }
 
+      // Validate current scan matches challenge's song and segment (only if scan fields are set)
+      // Legacy sessions may not have these fields set
+      if (session.currentScanSongId && session.currentScanSongId !== challenge.songId) {
+        return res.status(400).json({ 
+          error: "Challenge does not match current scan session",
+          details: "This challenge is for a different song than your current scan"
+        });
+      }
+
+      if (session.currentScanSegment !== null && session.currentScanSegment !== undefined && session.currentScanSegment !== challenge.segment) {
+        return res.status(400).json({ 
+          error: "Challenge does not match current scan segment",
+          details: "This challenge is for a different segment than your current scan"
+        });
+      }
+
+      // Validate locked type (if set)
+      if (session.lockedChallengeType && session.lockedChallengeType !== challenge.type) {
+        return res.status(400).json({ 
+          error: "Challenge type locked",
+          details: `You can only complete ${session.lockedChallengeType} challenges for this scan. Scan again to try other types.`
+        });
+      }
+
+      // Lock to this challenge type if not already locked
+      if (!session.lockedChallengeType) {
+        session = await storage.lockChallengeType(req.params.sessionToken, challenge.type);
+        if (!session) {
+          return res.status(500).json({ error: "Failed to lock challenge type" });
+        }
+      }
+
       // Add to completed challenges
-      let session = await storage.addCompletedChallenge(req.params.sessionToken, challengeId);
+      session = await storage.addCompletedChallenge(req.params.sessionToken, challengeId);
       if (!session) {
-        return res.status(404).json({ error: "Session not found" });
+        return res.status(500).json({ error: "Failed to add completed challenge" });
       }
 
       // Update points
       session = await storage.updateUserSessionPoints(req.params.sessionToken, challenge.points);
+      if (!session) {
+        return res.status(500).json({ error: "Failed to update points" });
+      }
       
       res.json(session);
     } catch (error) {
@@ -466,10 +508,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Song recognition endpoint with ACRCloud integration
-  app.post("/api/recognize", upload.single('audioFile'), async (req, res) => {
+  app.post("/api/recognize", upload.fields([{ name: 'audioFile', maxCount: 1 }]), async (req, res) => {
     try {
-      if (!req.file) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      if (!files || !files.audioFile || !files.audioFile[0]) {
         return res.status(400).json({ error: "Audio file is required" });
+      }
+      const audioFile = files.audioFile[0];
+
+      // Validate session token (text field parsed by multer)
+      const sessionToken = req.body.sessionToken;
+      if (!sessionToken) {
+        return res.status(400).json({ error: "Session token is required" });
+      }
+
+      // Update req.file to audioFile for compatibility with rest of code
+      req.file = audioFile;
+
+      // Verify session exists
+      const session = await storage.getUserSession(sessionToken);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
       }
 
       const songs = await storage.getSongs();
@@ -509,6 +568,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const offsetSeconds = recognition.playOffsetMs / 1000;
             const detectedSegment = Math.min(4, Math.max(1, Math.floor(offsetSeconds / 60) + 1));
             
+            // Update scan session and clear lock for new scan
+            const updatedSession = await storage.updateScanSession(sessionToken, matchedSong.id, detectedSegment);
+            
+            if (!updatedSession) {
+              return res.status(500).json({ error: "Failed to update scan session" });
+            }
+            
             // Get challenges for this segment
             const segmentChallenges = await storage.getChallengesBySegment(matchedSong.id, detectedSegment);
             
@@ -519,6 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               challenges: segmentChallenges,
               segment: detectedSegment,
               confidence: recognition.confidence,
+              session: updatedSession,
             });
           } else {
             console.log(`[Recognition] ⚠️ ACRCloud found "${recognition.title}" but no database match`);
@@ -532,6 +599,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Recognition] Using fallback mode (mock data)');
       const matchedSong = songs[0];
       const detectedSegment = Math.floor(Math.random() * 4) + 1;
+      
+      // Update scan session even for fallback
+      const updatedSession = await storage.updateScanSession(sessionToken, matchedSong.id, detectedSegment);
+      
+      if (!updatedSession) {
+        return res.status(500).json({ error: "Failed to update scan session" });
+      }
+      
       const segmentChallenges = await storage.getChallengesBySegment(matchedSong.id, detectedSegment);
       
       console.log(`[Recognition] Fallback: ${matchedSong.title}, Segment: ${detectedSegment}`);
@@ -541,6 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         challenges: segmentChallenges,
         segment: detectedSegment,
         confidence: 0.50, // Lower confidence for fallback
+        session: updatedSession,
       });
     } catch (error) {
       console.error("[Recognition] Error:", error);

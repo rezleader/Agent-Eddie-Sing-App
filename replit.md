@@ -149,6 +149,17 @@ The application uses Drizzle ORM with PostgreSQL (Neon serverless):
 - Text fields for categorical data (category, type) instead of enums for flexibility
 - HTTP-based Neon adapter (`drizzle-orm/neon-http`) for serverless compatibility
 
+**Database Migrations:**
+The application uses Drizzle for schema management. To apply schema changes:
+```bash
+npm run db:push
+# If data-loss warning appears and migration is safe:
+npm run db:push --force
+```
+
+Recent schema changes (November 2025):
+- Added `currentScanSongId`, `currentScanSegment`, `lockedChallengeType`, and `lastScanAt` columns to `user_sessions` table for one-type-per-scan restriction feature
+
 ### External Dependencies
 
 **Core Infrastructure:**
