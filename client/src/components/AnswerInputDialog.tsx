@@ -5,15 +5,18 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { type Challenge } from "@shared/schema";
 import { ExternalLink } from "lucide-react";
+import albumCover from "@assets/American Split Cover_1763171359272.png";
 
 interface AnswerInputDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   challenge: Challenge | null;
   onSubmit: (answer: string) => void;
+  onReject?: () => void;
+  songTitle?: string;
 }
 
-export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit }: AnswerInputDialogProps) {
+export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onReject, songTitle }: AnswerInputDialogProps) {
   const [answer, setAnswer] = useState("");
 
   if (!challenge) return null;
@@ -22,6 +25,14 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit }: A
     if (answer.trim()) {
       onSubmit(answer.trim());
       setAnswer(""); // Reset for next time
+    }
+  };
+
+  const handleReject = () => {
+    setAnswer("");
+    onOpenChange(false);
+    if (onReject) {
+      onReject();
     }
   };
 
@@ -41,6 +52,16 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit }: A
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Album Cover */}
+          <div className="flex justify-center">
+            <img 
+              src={albumCover} 
+              alt="American Split AI Album Cover" 
+              className="w-40 h-40 rounded-lg shadow-lg object-cover"
+              data-testid="img-answer-dialog-album-cover"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="answer" className="text-base font-semibold">
               {challenge.title}
@@ -84,20 +105,24 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit }: A
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            data-testid="button-cancel-answer"
-          >
-            Cancel
-          </Button>
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
+          {onReject && (
+            <Button
+              variant="outline"
+              onClick={handleReject}
+              className="w-full sm:w-auto"
+              data-testid="button-reject-challenge"
+            >
+              Reject Challenge
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={!answer.trim()}
+            className="w-full sm:w-auto"
             data-testid="button-submit-answer"
           >
-            Complete Challenge
+            Share & Complete
           </Button>
         </DialogFooter>
       </DialogContent>

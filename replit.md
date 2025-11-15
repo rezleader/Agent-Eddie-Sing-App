@@ -52,9 +52,15 @@ Preferred communication style: Simple, everyday language.
   - Users can only complete one challenge type (ACTION, SHARE, KNOW, or ALTERNATIVE) per scan session
   - Once a challenge is accepted, other type buttons are disabled until next scan
   - No "ALL" filter option - only the four specific challenge types are available
-- `ChallengeCard`: Gamified challenge presentation with point displays
+  - **Challenge rejection system**: Users can reject challenges for reduced points
+  - **Skip option**: After 2 rejections, users can skip and just share about the song
+- `ChallengeCard`: Gamified challenge presentation with point displays and organization links
+- `AnswerInputDialog`: Answer input with album cover, organization info, and share/reject options
 - `Leaderboard`: Top 100 players ranked by total points with current user highlighting
-- `SocialShareModal`: Multi-platform sharing functionality
+- `SocialShareModal`: Multi-platform sharing with album cover and agenteddiesing.replit.app link
+  - Facebook: Direct share
+  - Instagram/Snapchat: Copy text with instructions
+  - Includes user's answer and ending message: "Scan the album American Split AI available at AgentEddieSing.com... Skabe din fremtid, Eddie Sing & The 31 Days"
 - Admin interfaces for content management (SongsManager, ChallengesManager)
 
 ### Backend Architecture
@@ -87,7 +93,9 @@ Preferred communication style: Simple, everyday language.
 
 **Data Models:**
 - Songs: Audio files with metadata (title, artist [auto-populated as "Eddie Sing & The 31 Days"], album, duration, file path)
-- Challenges: Categorized tasks linked to song segments
+- Challenges: Categorized tasks linked to song segments with optional organization info
+  - New fields: `organization` (name), `organizationUrl` (link)
+  - Organizations matched to challenge categories (NAACP for racism, Trevor Project for LGBTQ+, etc.)
 - User Sessions: Point tracking and completed challenge history (stored in JSONB array)
 
 **Business Logic:**
@@ -111,11 +119,20 @@ Preferred communication style: Simple, everyday language.
   - Extracts duration from uploaded audio files using fluent-ffmpeg
   - 180-second fallback if ffprobe unavailable or detection fails
   - Eliminates manual duration entry in admin panel
+- **Challenge flow with answer input and sharing**:
+  1. User accepts challenge → Answer dialog opens with album cover and organization info
+  2. User types answer → Click "Share & Complete"
+  3. Share modal opens immediately with answer included
+  4. After sharing → Completion modal shows points earned
+- **Challenge rejection and retry system**:
+  - Users can reject challenges for reduced points (-10 points per rejection, minimum 5)
+  - After 2 rejections, "Skip and Post About Song" option appears
+  - Skip option awards 5 points for just sharing about the song
 - Challenge completion validation with duplicate prevention
 - **One challenge type per scan restriction** - Users locked to selected type after accepting a challenge
   - Encourages multiple scans and sustained engagement with the music
   - Prevents gaming the system by completing all types in one scan
-- Point accumulation system
+- Point accumulation system with dynamic adjustment
 - Session management with localStorage persistence
 - Leaderboard ranking system (top 100 players, anonymized player IDs)
 - Sanitized leaderboard API to prevent session token exposure

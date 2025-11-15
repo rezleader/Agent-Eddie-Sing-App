@@ -45,6 +45,8 @@ export function SongChallenges({
   const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
   const [answerChallenge, setAnswerChallenge] = useState<Challenge | null>(null);
   const [userAnswer, setUserAnswer] = useState("");
+  const [rejectionCount, setRejectionCount] = useState(0);
+  const [showSkipOption, setShowSkipOption] = useState(false);
 
   // Reset category selection when type changes to prevent empty filter results
   useEffect(() => {
@@ -78,21 +80,61 @@ export function SongChallenges({
   const handleAccept = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
-      setAnswerChallenge(challenge);
+      // Apply point reduction if this is a retry after rejection
+      const adjustedChallenge = rejectionCount > 0 
+        ? { ...challenge, points: Math.max(5, challenge.points - (rejectionCount * 10)) }
+        : challenge;
+      
+      setAnswerChallenge(adjustedChallenge);
       setAnswerDialogOpen(true);
     }
+  };
+
+  const handleRejectChallenge = () => {
+    setRejectionCount(prev => prev + 1);
+    
+    // After 2 rejections, show skip option
+    if (rejectionCount >= 1) {
+      setShowSkipOption(true);
+    }
+    
+    // Reset selections to allow new choice
+    setSelectedType(null);
+    setSelectedCategory(null);
   };
 
   const handleAnswerSubmit = (answer: string) => {
     setUserAnswer(answer);
     setAnswerDialogOpen(false);
     
-    // Complete the challenge
+    // Open share modal immediately with the answer
     if (answerChallenge) {
-      onAcceptChallenge(answerChallenge.id);
+      setShareChallenge(answerChallenge);
+      setSharePoints(answerChallenge.points);
+      setShareModalOpen(true);
+      
+      // Store for completion after share
       setCompletedChallenge(answerChallenge);
-      setCompletionModalOpen(true);
     }
+  };
+
+  const handleShareComplete = () => {
+    // After sharing, complete the challenge
+    if (completedChallenge) {
+      onAcceptChallenge(completedChallenge.id);
+      setShareModalOpen(false);
+      setCompletionModalOpen(true);
+      setRejectionCount(0); // Reset for next challenge
+      setShowSkipOption(false);
+    }
+  };
+
+  const handleSkipAndShareSong = () => {
+    // Skip challenge but share about the song
+    setShareChallenge(null);
+    setUserAnswer(`Just discovered this amazing song: ${song.title} by ${song.artist}!`);
+    setSharePoints(5); // Minimal points for just sharing the song
+    setShareModalOpen(true);
   };
 
   const handleShare = (challengeId: string) => {
@@ -278,9 +320,29 @@ export function SongChallenges({
           </Card>
         )}
 
+        {/* Skip Option - Appears after 2 rejections */}
+        {showSkipOption && !selectedType && (
+          <Card className="border-2 border-primary/30">
+            <CardContent className="py-8 text-center space-y-4">
+              <p className="text-lg font-semibold">Skip Challenge</p>
+              <p className="text-muted-foreground">
+                Not interested in challenges? You can skip and just share about the song "{song.title}" instead.
+              </p>
+              <Button 
+                onClick={handleSkipAndShareSong}
+                variant="outline"
+                size="lg"
+                data-testid="button-skip-and-share-song"
+              >
+                Skip Challenge and Post About "{song.title}"
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Challenges grid - Show single challenge after both type and category are selected */}
         <div>
-          {!selectedType && (
+          {!selectedType && !showSkipOption && (
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-lg font-semibold mb-2">Choose a Challenge Type</p>
@@ -342,6 +404,8 @@ export function SongChallenges({
         onOpenChange={setAnswerDialogOpen}
         challenge={answerChallenge}
         onSubmit={handleAnswerSubmit}
+        onReject={handleRejectChallenge}
+        songTitle={song.title}
       />
 
       {/* Completion modal */}
@@ -355,10 +419,18 @@ export function SongChallenges({
       {/* Share modal */}
       <SocialShareModal
         open={shareModalOpen}
-        onOpenChange={setShareModalOpen}
+        onOpenChange={(open) => {
+          setShareModalOpen(open);
+          if (!open && completedChallenge) {
+            // When share modal closes and we have a completed challenge, trigger completion
+            handleShareComplete();
+          }
+        }}
         challenge={shareChallenge}
         points={sharePoints}
         userAnswer={userAnswer}
+        songTitle={song.title}
+        songArtist={song.artist}
       />
     </div>
   );
