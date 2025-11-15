@@ -39,6 +39,7 @@ export function SongChallenges({
   const [sharePoints, setSharePoints] = useState(0);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
+  const [lockedType, setLockedType] = useState<ChallengeType | null>(null); // Track completed type for this scan
 
   // Group challenges by segment
   const challengesBySegment = challenges.reduce((acc, challenge) => {
@@ -72,6 +73,8 @@ export function SongChallenges({
       onAcceptChallenge(challengeId);
       setCompletedChallenge(challenge);
       setCompletionModalOpen(true);
+      // Lock to this challenge type for this scan session
+      setLockedType(challenge.type as ChallengeType);
       // Auto-open share modal after accepting
       setShareChallenge(challenge);
       setSharePoints(challenge.points);
@@ -184,30 +187,37 @@ export function SongChallenges({
           <CardHeader>
             <CardTitle className="text-xl">Step 1: Select Challenge Type</CardTitle>
             <CardDescription>
-              Choose the type of challenge you want to complete
+              {lockedType 
+                ? `You've completed a ${lockedType} challenge. Scan again to try other types.`
+                : "Choose the type of challenge you want to complete (one type per scan)"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {challengeTypes.map(type => (
-                <Button
-                  key={type}
-                  variant={selectedType === type ? "default" : "outline"}
-                  onClick={() => setSelectedType(type)}
-                  className="h-auto py-4 flex flex-col items-center gap-2"
-                  data-testid={`filter-type-${type}`}
-                >
-                  <Badge variant={selectedType === type ? "secondary" : "outline"} className="text-sm font-bold">
-                    {type}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground text-center">
-                    {type === "ACTION" && "Take action on an issue"}
-                    {type === "SHARE" && "Share on social media"}
-                    {type === "KNOW" && "Test your knowledge"}
-                    {type === "ALTERNATIVE" && "Create content"}
-                  </span>
-                </Button>
-              ))}
+              {challengeTypes.map(type => {
+                const isLocked = lockedType !== null && lockedType !== type;
+                return (
+                  <Button
+                    key={type}
+                    variant={selectedType === type ? "default" : "outline"}
+                    onClick={() => !isLocked && setSelectedType(type)}
+                    disabled={isLocked}
+                    className="h-auto py-4 flex flex-col items-center gap-2"
+                    data-testid={`filter-type-${type}`}
+                  >
+                    <Badge variant={selectedType === type ? "secondary" : "outline"} className="text-sm font-bold">
+                      {type}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground text-center">
+                      {type === "ACTION" && "Take action on an issue"}
+                      {type === "SHARE" && "Share on social media"}
+                      {type === "KNOW" && "Test your knowledge"}
+                      {type === "ALTERNATIVE" && "Create content"}
+                    </span>
+                  </Button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
