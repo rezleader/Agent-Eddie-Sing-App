@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +41,11 @@ export function SongChallenges({
   const [sharePoints, setSharePoints] = useState(0);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
+
+  // Reset category selection when type changes to prevent empty filter results
+  useEffect(() => {
+    setSelectedCategory(null);
+  }, [selectedType]);
 
   // Group challenges by segment
   const challengesBySegment = challenges.reduce((acc, challenge) => {
@@ -232,17 +237,22 @@ export function SongChallenges({
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {challengeCategories.map(category => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category)}
-                    className="gap-2"
-                    data-testid={`filter-category-${category}`}
-                  >
-                    <CategoryBadge category={category} className="mr-0" />
-                  </Button>
-                ))}
+                {challengeCategories.map(category => {
+                  const isSelected = selectedCategory === category;
+                  const isDisabled = selectedCategory !== null && selectedCategory !== category;
+                  return (
+                    <Button
+                      key={category}
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => !isDisabled && setSelectedCategory(category)}
+                      disabled={isDisabled}
+                      className="gap-2"
+                      data-testid={`filter-category-${category}`}
+                    >
+                      <CategoryBadge category={category} className="mr-0" />
+                    </Button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
