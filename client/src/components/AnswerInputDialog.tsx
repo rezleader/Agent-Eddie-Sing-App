@@ -8,7 +8,6 @@ import { ExternalLink, Camera, Video, Loader2, CheckCircle, X } from "lucide-rea
 import albumCover from "@assets/American Split Cover_1763172339559.png";
 import { useCameraCapture } from "@/hooks/useCameraCapture";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
 interface AnswerInputDialogProps {
   open: boolean;
@@ -40,18 +39,25 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
       formData.append('challengeId', challenge.id);
       formData.append('mediaType', mediaType);
 
-      const response = await apiRequest<UserMedia>('/api/media/upload', {
+      const response = await fetch('/api/media/upload', {
         method: 'POST',
         body: formData,
-        headers: {}, // Let browser set Content-Type with boundary
+        credentials: 'include',
+        // Don't set Content-Type - browser will set it with boundary
       });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const media = await response.json();
 
       toast({
         title: "Upload successful",
         description: `Your ${mediaType} has been uploaded successfully.`,
       });
 
-      return response;
+      return media;
     } catch (error) {
       console.error('Media upload error:', error);
       toast({
@@ -118,7 +124,7 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg" data-testid="modal-answer-input">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" data-testid="modal-answer-input">
         <DialogHeader>
           <DialogTitle className="text-2xl">Answer This Challenge</DialogTitle>
           <DialogDescription>
@@ -126,7 +132,7 @@ export function AnswerInputDialog({ open, onOpenChange, challenge, onSubmit, onR
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 pb-6">
           {/* Album Cover */}
           <div className="flex justify-center">
             <img 
