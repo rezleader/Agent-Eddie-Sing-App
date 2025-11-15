@@ -54,6 +54,7 @@ const platformConfig = {
 export function SocialShareModal({ open, onOpenChange, challenge, points, userAnswer = "", songTitle, songArtist, mediaId, sessionToken }: SocialShareModalProps) {
   const [copiedText, setCopiedText] = useState(false);
   const [showCopyWarning, setShowCopyWarning] = useState(false);
+  const [justCopied, setJustCopied] = useState(false); // For button feedback only
 
   // Fetch media if mediaId is provided
   const { data: media } = useQuery<UserMedia>({
@@ -82,9 +83,10 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
     const handleCopyText = async () => {
       try {
         await navigator.clipboard.writeText(text);
-        setCopiedText(true);
+        setCopiedText(true); // Persists until modal closes
+        setJustCopied(true); // For button feedback
         setShowCopyWarning(false);
-        setTimeout(() => setCopiedText(false), 2000);
+        setTimeout(() => setJustCopied(false), 2000); // Reset button feedback after 2s
       } catch (err) {
         console.error('Failed to copy:', err);
       }
@@ -186,7 +188,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             onClick={handleCopyText}
             data-testid="button-copy-text"
           >
-            {copiedText ? (
+            {justCopied ? (
               <>
                 <Check className="w-5 h-5 mr-2" />
                 ✓ Post Text Copied!
@@ -194,7 +196,7 @@ export function SocialShareModal({ open, onOpenChange, challenge, points, userAn
             ) : (
               <>
                 <Copy className="w-5 h-5 mr-2" />
-                Copy Post Text
+                {copiedText ? 'Copy Post Text Again' : 'Copy Post Text'}
               </>
             )}
           </Button>
