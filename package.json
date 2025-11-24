@@ -11,7 +11,6 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@google/realtime-reactors": "0.0.18",
     "@google/use-assistant": "0.10.25",
     "@google/use-assistant-react": "0.10.4",
     "@gradio/react-accordion": "^0.1.4",
