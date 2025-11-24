@@ -12,7 +12,7 @@ The app enables users to:
 - Earn points for completing challenges
 - View leaderboard rankings showing top players by points
 - Share achievements on social media platforms with uploaded media
-
+- 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
